@@ -1,0 +1,30 @@
+databases:
+  - name: kan-nfl-db
+    plan: basic-256mb
+    databaseName: kan_nfl
+    user: kan_nfl
+
+services:
+  - type: web
+    name: kan-nfl-2
+    runtime: node
+    plan: starter
+    region: oregon
+    branch: main
+    autoDeploy: true
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm run start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: kan-nfl-db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: SEASON_YEAR
+        sync: false
+      - key: NFL_SYNC_MIN_INTERVAL_SEC
+        value: "900"
