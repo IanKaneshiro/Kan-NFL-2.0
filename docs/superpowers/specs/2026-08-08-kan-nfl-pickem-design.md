@@ -148,9 +148,9 @@ for each game where status = final and winner_team is set:
 
 ### Leaderboard
 
-- Display name, points (and simple record if useful)
-- Stable sort: points desc, then display name
-- Ties share the same point total (rank display can be competition or dense; pick one in implementation)
+- Display name, points, and record style stats when cheap (`correct` / `final games` or W–L)
+- Stable sort: **points descending**, then **display name ascending**
+- Rank display: **competition ranking** (1, 2, 2, 4…) when two players share points
 
 ## NFL sync
 
@@ -161,6 +161,7 @@ for each game where status = final and winner_team is set:
 - **Upsert** by `external_id`; update kickoff/status/winner; never delete picks on game update
 - Respect `winner_override`
 - Season year + week bounds configurable (not hard-coded forever)
+- **Current week:** derived from `kickoff_at` of synced games (first week with a not-yet-final game, or last week of season if all final); fall back to week 1 if no games synced yet
 
 ## Effect usage
 
