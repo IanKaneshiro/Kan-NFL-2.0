@@ -26,19 +26,19 @@ export function summarizeWeek(
   const picked = new Set(
     picks.filter((p) => p.userId === userId).map((p) => p.gameId),
   );
-  const openUnpicked = games.filter((g) => {
-    const kickoff =
-      g.kickoffAt instanceof Date ? g.kickoffAt : new Date(g.kickoffAt);
-    return now.getTime() < kickoff.getTime() && !picked.has(g.id);
-  });
   let next: Date | null = null;
-  for (const g of openUnpicked) {
+  let gamesLeft = 0;
+  for (const g of games) {
     const kickoff =
       g.kickoffAt instanceof Date ? g.kickoffAt : new Date(g.kickoffAt);
-    if (!next || kickoff.getTime() < next.getTime()) next = kickoff;
+    const isFuture = now.getTime() < kickoff.getTime();
+    if (isFuture) {
+      if (!next || kickoff.getTime() < next.getTime()) next = kickoff;
+      if (!picked.has(g.id)) gamesLeft++;
+    }
   }
   return {
-    gamesLeft: openUnpicked.length,
+    gamesLeft,
     nextLockAt: next ? next.toISOString() : null,
   };
 }
