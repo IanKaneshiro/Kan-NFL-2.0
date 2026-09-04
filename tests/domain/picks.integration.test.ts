@@ -37,6 +37,7 @@ describe("savePicks", () => {
       displayName: "Picker",
       role: "player",
       passwordHash: "x",
+      avatarId: "fun-football",
       createdAt: now,
       updatedAt: now,
     });

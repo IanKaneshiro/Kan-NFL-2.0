@@ -19,6 +19,7 @@ export const users = pgTable(
     setupTokenExpiresAt: timestamp("setup_token_expires_at", {
       withTimezone: true,
     }),
+    avatarId: text("avatar_id").notNull().default("fun-football"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -26,7 +27,10 @@ export const users = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (t) => [uniqueIndex("users_email_uidx").on(t.email)],
+  (t) => [
+    uniqueIndex("users_email_uidx").on(t.email),
+    uniqueIndex("users_display_name_uidx").on(t.displayName),
+  ],
 );
 
 export const games = pgTable(

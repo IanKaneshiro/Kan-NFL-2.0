@@ -10,6 +10,7 @@ import {
   SetupTokenInvalid,
   ValidationError,
 } from "@/domain/errors";
+import { DEFAULT_AVATAR_ID, isValidAvatarId, resolveAvatarId } from "@/domain/avatars";
 
 export type UserRow = {
   id: string;
@@ -17,6 +18,7 @@ export type UserRow = {
   displayName: string;
   role: "player" | "commissioner";
   passwordHash: string | null;
+  avatarId: string;
 };
 
 function tables() {
@@ -47,8 +49,9 @@ export function createUser(input: {
         displayName,
         role: input.role,
         passwordHash: null,
+        avatarId: DEFAULT_AVATAR_ID,
       });
-      return { id, email, displayName, role: input.role };
+      return { id, email, displayName, role: input.role, avatarId: DEFAULT_AVATAR_ID };
     },
     catch: (e) =>
       e instanceof ValidationError
@@ -124,6 +127,7 @@ export function completeSetup(rawToken: string, password: string) {
         email: user.email,
         displayName: user.displayName,
         role: user.role as "player" | "commissioner",
+        avatarId: resolveAvatarId(user.avatarId),
       };
     },
     catch: (e) => {
@@ -157,6 +161,7 @@ export function login(email: string, password: string) {
         email: user.email,
         displayName: user.displayName,
         role: user.role as "player" | "commissioner",
+        avatarId: resolveAvatarId(user.avatarId),
       };
     },
     catch: (e) =>
@@ -198,6 +203,65 @@ export function changePassword(
   });
 }
 
+export function updateProfile(
+  userId: string,
+  patch: { displayName?: string; avatarId?: string },
+) {
+  return Effect.tryPromise({
+    try: async () => {
+      const db = getDb();
+      const t = tables();
+      const rows = await db.select().from(t.users).where(eq(t.users.id, userId));
+      const user = rows[0];
+      if (!user) throw new NotFound({ entity: "user" });
+
+      let displayName = user.displayName;
+      if (patch.displayName !== undefined) {
+        displayName = patch.displayName.trim();
+        if (displayName.length < 2 || displayName.length > 32) {
+          throw new ValidationError({
+            message: "Display name must be 2–32 characters",
+          });
+        }
+        const others = await db.select().from(t.users);
+        const taken = others.some(
+          (u) =>
+            u.id !== userId &&
+            u.displayName.toLowerCase() === displayName.toLowerCase(),
+        );
+        if (taken) {
+          throw new ValidationError({ message: "That display name is taken" });
+        }
+      }
+
+      let avatarId = user.avatarId ?? DEFAULT_AVATAR_ID;
+      if (patch.avatarId !== undefined) {
+        if (!isValidAvatarId(patch.avatarId)) {
+          throw new ValidationError({ message: "Invalid avatar" });
+        }
+        avatarId = patch.avatarId;
+      }
+
+      await db
+        .update(t.users)
+        .set({ displayName, avatarId, updatedAt: new Date() })
+        .where(eq(t.users.id, userId));
+
+      return {
+        id: user.id,
+        email: user.email,
+        displayName,
+        role: user.role as "player" | "commissioner",
+        avatarId,
+      };
+    },
+    catch: (e) => {
+      if (e instanceof ValidationError || e instanceof NotFound) return e;
+      return new ValidationError({ message: String(e) });
+    },
+  });
+}
+
 export function listUsers() {
   return Effect.tryPromise({
     try: async () => {
@@ -210,6 +274,7 @@ export function listUsers() {
         displayName: u.displayName,
         role: u.role as "player" | "commissioner",
         hasPassword: Boolean(u.passwordHash),
+        avatarId: resolveAvatarId(u.avatarId),
       }));
     },
     catch: (e) => new ValidationError({ message: String(e) }),

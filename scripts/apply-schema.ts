@@ -14,10 +14,12 @@ CREATE TABLE IF NOT EXISTS users (
   role TEXT NOT NULL,
   setup_token_hash TEXT,
   setup_token_expires_at INTEGER,
+  avatar_id TEXT NOT NULL DEFAULT 'fun-football',
   created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
   updated_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_uidx ON users(email);
+CREATE UNIQUE INDEX IF NOT EXISTS users_display_name_uidx ON users(display_name);
 
 CREATE TABLE IF NOT EXISTS games (
   id TEXT PRIMARY KEY,
@@ -66,10 +68,12 @@ CREATE TABLE IF NOT EXISTS users (
   role TEXT NOT NULL,
   setup_token_hash TEXT,
   setup_token_expires_at TIMESTAMPTZ,
+  avatar_id TEXT NOT NULL DEFAULT 'fun-football',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_uidx ON users(email);
+CREATE UNIQUE INDEX IF NOT EXISTS users_display_name_uidx ON users(display_name);
 
 CREATE TABLE IF NOT EXISTS games (
   id TEXT PRIMARY KEY,
@@ -121,12 +125,29 @@ async function main() {
     for (const stmt of SQLITE_DDL.split(";").map((s) => s.trim()).filter(Boolean)) {
       await client.execute(stmt);
     }
+    try {
+      await client.execute(
+        "ALTER TABLE users ADD COLUMN avatar_id TEXT NOT NULL DEFAULT 'fun-football'",
+      );
+    } catch (e) {
+      const msg = String(e);
+      if (!/duplicate column/i.test(msg)) throw e;
+    }
+    await client.execute(
+      "CREATE UNIQUE INDEX IF NOT EXISTS users_display_name_uidx ON users(display_name)",
+    );
     console.log(`Applied SQLite schema to ${abs}`);
     return;
   }
 
   const sql = postgres(url.replace(/^postgres:\/\//, "postgresql://"), { max: 1 });
   await sql.unsafe(PG_DDL);
+  await sql.unsafe(
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_id TEXT NOT NULL DEFAULT 'fun-football'",
+  );
+  await sql.unsafe(
+    "CREATE UNIQUE INDEX IF NOT EXISTS users_display_name_uidx ON users(display_name)",
+  );
   await sql.end();
   console.log("Applied Postgres schema");
 }

@@ -18,6 +18,7 @@ export const users = sqliteTable(
     setupTokenExpiresAt: integer("setup_token_expires_at", {
       mode: "timestamp_ms",
     }),
+    avatarId: text("avatar_id").notNull().default("fun-football"),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .notNull()
       .default(sql`(unixepoch() * 1000)`),
@@ -25,7 +26,10 @@ export const users = sqliteTable(
       .notNull()
       .default(sql`(unixepoch() * 1000)`),
   },
-  (t) => [uniqueIndex("users_email_uidx").on(t.email)],
+  (t) => [
+    uniqueIndex("users_email_uidx").on(t.email),
+    uniqueIndex("users_display_name_uidx").on(t.displayName),
+  ],
 );
 
 export const games = sqliteTable(
