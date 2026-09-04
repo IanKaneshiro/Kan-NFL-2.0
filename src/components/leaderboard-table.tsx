@@ -136,7 +136,7 @@ export function LeaderboardTable() {
                   >
                     <div className="flex items-center justify-between px-4 py-4 sm:hidden">
                       <div className="flex items-center gap-3">
-                        <RankBadge index={index} />
+                        <RankBadge index={index} rank={r.rank} />
                         <AvatarMark avatarId={r.avatarId} size="sm" />
                         <span className="text-lg font-medium text-white">
                           {r.displayName}
@@ -146,7 +146,7 @@ export function LeaderboardTable() {
                     </div>
                     <div className="hidden grid-cols-12 items-center gap-4 px-6 py-4 sm:grid">
                       <div className="col-span-2 text-center">
-                        <RankBadge index={index} />
+                        <RankBadge index={index} rank={r.rank} />
                       </div>
                       <div className="col-span-5 flex items-center gap-2 text-lg text-white">
                         <AvatarMark avatarId={r.avatarId} size="sm" />
@@ -178,7 +178,7 @@ export function LeaderboardTable() {
   );
 }
 
-function RankBadge({ index }: { index: number }) {
+function RankBadge({ index, rank }: { index: number; rank: number }) {
   const cls =
     index === 0
       ? "bg-yellow-500 text-gray-900"
@@ -191,7 +191,7 @@ function RankBadge({ index }: { index: number }) {
     <span
       className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${cls}`}
     >
-      {index + 1}
+      {rank}
     </span>
   );
 }

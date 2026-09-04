@@ -3,7 +3,7 @@ import { SiteChrome } from "@/components/site-chrome";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "NFL Pick'em",
+  title: "Kan NFL Pick'em",
   description: "Brother pick'em for the NFL regular season",
 };
 
