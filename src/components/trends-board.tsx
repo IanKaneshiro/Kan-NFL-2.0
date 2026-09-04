@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AvatarMark } from "@/components/avatar-mark";
 
 type TrendGame = {
@@ -53,6 +53,7 @@ export function TrendsBoard() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<ModalState | null>(null);
+  const pickerFetchId = useRef(0);
 
   const load = useCallback(async (w?: number) => {
     setLoading(true);
@@ -88,26 +89,43 @@ export function TrendsBoard() {
   }, [modal]);
 
   async function openSide(game: TrendGame, pickedTeam: string) {
+    const fetchId = ++pickerFetchId.current;
     setModal({ game, pickedTeam, pickers: null, error: null });
     try {
       const res = await fetch(
         `/api/team-pickers?gameId=${encodeURIComponent(game.gameId)}&pickedTeam=${encodeURIComponent(pickedTeam)}`,
       );
       const body = await res.json();
+      if (fetchId !== pickerFetchId.current) return;
       if (!res.ok) {
         setModal((prev) =>
-          prev
-            ? { ...prev, error: body.error ?? "Failed to load pickers", pickers: [] }
+          prev &&
+          prev.game.gameId === game.gameId &&
+          prev.pickedTeam === pickedTeam
+            ? {
+                ...prev,
+                error: body.error ?? "Failed to load pickers",
+                pickers: [],
+              }
             : prev,
         );
         return;
       }
       setModal((prev) =>
-        prev ? { ...prev, pickers: body.pickers ?? [], error: null } : prev,
+        prev &&
+        prev.game.gameId === game.gameId &&
+        prev.pickedTeam === pickedTeam
+          ? { ...prev, pickers: body.pickers ?? [], error: null }
+          : prev,
       );
     } catch {
+      if (fetchId !== pickerFetchId.current) return;
       setModal((prev) =>
-        prev ? { ...prev, error: "Network error", pickers: [] } : prev,
+        prev &&
+        prev.game.gameId === game.gameId &&
+        prev.pickedTeam === pickedTeam
+          ? { ...prev, error: "Network error", pickers: [] }
+          : prev,
       );
     }
   }
