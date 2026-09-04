@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { SiteChrome } from "@/components/site-chrome";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Kan NFL Pick'em",
+  title: "NFL Pick'em",
   description: "Brother pick'em for the NFL regular season",
 };
 
@@ -13,7 +14,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <SiteChrome>{children}</SiteChrome>
+      </body>
     </html>
   );
 }
