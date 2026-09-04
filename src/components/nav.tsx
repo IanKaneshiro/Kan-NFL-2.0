@@ -67,6 +67,7 @@ export function Nav({
         </span>
         <nav className="hidden items-center gap-2 md:flex">
           {isLoggedIn && navLink("/picks", "Picks")}
+          {isLoggedIn && navLink("/trends", "Trends")}
           {isLoggedIn && navLink("/leaderboard", "Leader Board")}
           {isLoggedIn && navLink("/account", "Account")}
           {isCommissioner && navLink("/admin", "Admin", { admin: true })}
@@ -117,6 +118,7 @@ export function Nav({
         <div className="absolute top-16 left-0 z-50 w-full border-t border-gray-700 bg-gray-900 md:hidden">
           <div className="flex flex-col space-y-1 p-4">
             {isLoggedIn && navLink("/picks", "Picks")}
+            {isLoggedIn && navLink("/trends", "Trends")}
             {isLoggedIn && navLink("/leaderboard", "Leader Board")}
             {isLoggedIn && navLink("/account", "Account")}
             {isCommissioner && navLink("/admin", "Admin", { admin: true })}
