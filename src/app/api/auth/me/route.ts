@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { getSession } from "@/auth/session";
 import { getDb, schemaTables } from "@/db";
+import { resolveAvatarId } from "@/domain/avatars";
 import { jsonOk } from "@/lib/api";
 
 export async function GET() {
@@ -22,6 +23,7 @@ export async function GET() {
       email: u.email,
       displayName: u.displayName,
       role: u.role,
+      avatarId: resolveAvatarId(u.avatarId),
     },
   });
 }

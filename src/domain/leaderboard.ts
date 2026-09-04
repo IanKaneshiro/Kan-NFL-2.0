@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import { eq } from "drizzle-orm";
 import { getDb, schemaTables } from "@/db";
+import { resolveAvatarId } from "@/domain/avatars";
 import { ValidationError } from "@/domain/errors";
 import { competitionRanks } from "@/domain/ranking";
 import { scorePick, type GameStatus } from "@/domain/scoring";
@@ -15,6 +16,7 @@ function tables() {
 export type LeaderboardRow = {
   userId: string;
   displayName: string;
+  avatarId: string;
   points: number;
   correct: number;
   finalGames: number;
@@ -84,6 +86,7 @@ export function getLeaderboard(opts: { week?: number } = {}) {
       return {
         userId: u.id,
         displayName: u.displayName,
+        avatarId: resolveAvatarId(u.avatarId),
         points,
         correct,
         finalGames: finalGames.length,
@@ -96,6 +99,7 @@ export function getLeaderboard(opts: { week?: number } = {}) {
       return {
         userId: r.userId,
         displayName: r.displayName,
+        avatarId: full.avatarId,
         points: r.points,
         correct: full.correct,
         finalGames: full.finalGames,
