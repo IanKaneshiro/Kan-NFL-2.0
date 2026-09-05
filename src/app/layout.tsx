@@ -5,6 +5,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Kan NFL Pick'em",
   description: "Brother pick'em for the NFL regular season",
+  appleWebApp: {
+    capable: true,
+    title: "Kan NFL",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export default function RootLayout({
