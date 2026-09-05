@@ -10,6 +10,15 @@ type User = {
   hasPassword: boolean;
 };
 
+type AdminGame = {
+  id: string;
+  homeTeam: string;
+  awayTeam: string;
+  kickoffAt: string;
+  winnerTeam: string | null;
+  status: string;
+};
+
 export function AdminPanel() {
   const [users, setUsers] = useState<User[]>([]);
   const [email, setEmail] = useState("");
@@ -18,8 +27,8 @@ export function AdminPanel() {
   const [error, setError] = useState<string | null>(null);
   const [tokenInfo, setTokenInfo] = useState<string | null>(null);
   const [syncWeek, setSyncWeek] = useState("1");
-  const [overrideGameId, setOverrideGameId] = useState("");
-  const [overrideTeam, setOverrideTeam] = useState("");
+  const [games, setGames] = useState<AdminGame[]>([]);
+  const [selectedGameId, setSelectedGameId] = useState("");
 
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/users");
@@ -30,6 +39,26 @@ export function AdminPanel() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const loadGames = useCallback(async (week: string) => {
+    const res = await fetch(`/api/admin/games?week=${week}`);
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? "Failed to load games");
+      setGames([]);
+      setSelectedGameId("");
+      return;
+    }
+    const next: AdminGame[] = data.games ?? [];
+    setGames(next);
+    setSelectedGameId((prev) =>
+      next.some((g) => g.id === prev) ? prev : (next[0]?.id ?? ""),
+    );
+  }, []);
+
+  useEffect(() => {
+    void loadGames(syncWeek);
+  }, [loadGames, syncWeek]);
 
   async function createUser(e: React.FormEvent) {
     e.preventDefault();
@@ -81,16 +110,22 @@ export function AdminPanel() {
       return;
     }
     setMessage(`Sync complete: ${JSON.stringify(data.results?.length ?? 0)} week(s)`);
+    await loadGames(syncWeek);
   }
 
-  async function doOverride(e: React.FormEvent) {
-    e.preventDefault();
+  async function doOverride(winnerTeam: string | null) {
+    setError(null);
+    setMessage(null);
+    if (!selectedGameId) {
+      setError("Select a game first");
+      return;
+    }
     const res = await fetch("/api/admin/override-winner", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        gameId: overrideGameId,
-        winnerTeam: overrideTeam || null,
+        gameId: selectedGameId,
+        winnerTeam,
       }),
     });
     const data = await res.json();
@@ -98,14 +133,21 @@ export function AdminPanel() {
       setError(data.error ?? "Override failed");
       return;
     }
-    setMessage(`Override set for ${data.gameId}`);
+    setMessage(
+      winnerTeam
+        ? `Override set: ${winnerTeam}`
+        : `Override cleared for ${data.gameId}`,
+    );
+    await loadGames(syncWeek);
   }
+
+  const selectedGame = games.find((g) => g.id === selectedGameId);
 
   return (
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="text-2xl font-bold">Commissioner admin</h1>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-gray-400">
           Manage brothers, setup links, NFL sync, and rare score fixes.
         </p>
       </div>
@@ -113,14 +155,14 @@ export function AdminPanel() {
       {error && <p className="text-sm text-red-400">{error}</p>}
       {message && <p className="text-sm text-green-400">{message}</p>}
       {tokenInfo && (
-        <p className="break-all rounded-md border border-slate-700 bg-slate-900 p-3 text-xs">
+        <p className="break-all rounded-md border border-gray-700 bg-gray-800 p-3 text-xs">
           Setup link (copied if possible): {tokenInfo}
         </p>
       )}
 
-      <section className="rounded-xl border border-slate-800 p-4">
+      <section className="rounded-xl border border-gray-700 bg-gray-800 p-4">
         <h2 className="mb-3 font-semibold">Players</h2>
-        <ul className="mb-4 divide-y divide-slate-800 text-sm">
+        <ul className="mb-4 divide-y divide-gray-700 text-sm">
           {users.map((u) => (
             <li
               key={u.id}
@@ -128,14 +170,14 @@ export function AdminPanel() {
             >
               <div>
                 <div className="font-medium">{u.displayName}</div>
-                <div className="text-slate-500">
+                <div className="text-gray-400">
                   {u.email} · {u.role} ·{" "}
                   {u.hasPassword ? "password set" : "needs setup"}
                 </div>
               </div>
               <button
                 type="button"
-                className="rounded-md border border-slate-600 px-2 py-1 text-xs hover:bg-slate-800"
+                className="rounded-md border border-gray-600 px-2 py-1 text-xs hover:bg-gray-700"
                 onClick={() => issueToken(u.id)}
               >
                 Setup / reset link
@@ -146,7 +188,7 @@ export function AdminPanel() {
         <form onSubmit={createUser} className="grid gap-2 sm:grid-cols-3">
           <input
             placeholder="Display name"
-            className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm"
+            className="rounded-md border border-gray-600 bg-gray-900 px-2 py-1.5 text-sm"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             required
@@ -154,21 +196,21 @@ export function AdminPanel() {
           <input
             type="email"
             placeholder="Email"
-            className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm"
+            className="rounded-md border border-gray-600 bg-gray-900 px-2 py-1.5 text-sm"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
           <button
             type="submit"
-            className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium hover:bg-blue-500"
+            className="rounded-md bg-green-600 px-3 py-1.5 text-sm font-medium hover:bg-green-700"
           >
             Add player
           </button>
         </form>
       </section>
 
-      <section className="rounded-xl border border-slate-800 p-4">
+      <section className="rounded-xl border border-gray-700 bg-gray-800 p-4">
         <h2 className="mb-3 font-semibold">NFL sync (ESPN free API)</h2>
         <div className="flex flex-wrap items-center gap-2">
           <select
@@ -199,29 +241,61 @@ export function AdminPanel() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-slate-800 p-4">
+      <section className="rounded-xl border border-gray-700 bg-gray-800 p-4">
         <h2 className="mb-3 font-semibold">Override winner</h2>
-        <form onSubmit={doOverride} className="grid gap-2 sm:grid-cols-3">
-          <input
-            placeholder="Game id"
-            className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm"
-            value={overrideGameId}
-            onChange={(e) => setOverrideGameId(e.target.value)}
-            required
-          />
-          <input
-            placeholder="Winner abbr (e.g. KC)"
-            className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm"
-            value={overrideTeam}
-            onChange={(e) => setOverrideTeam(e.target.value.toUpperCase())}
-          />
-          <button
-            type="submit"
-            className="rounded-md border border-amber-700 px-3 py-1.5 text-sm text-amber-200 hover:bg-amber-950"
+        <p className="mb-3 text-xs text-gray-400">
+          Uses the week selector above. Home / Away set the winner; Clear
+          removes the override.
+        </p>
+        <div className="flex flex-col gap-3">
+          <select
+            className="rounded-md border border-gray-600 bg-gray-900 px-2 py-1.5 text-sm"
+            value={selectedGameId}
+            onChange={(e) => setSelectedGameId(e.target.value)}
+            disabled={games.length === 0}
           >
-            Set override
-          </button>
-        </form>
+            {games.length === 0 ? (
+              <option value="">No games this week</option>
+            ) : (
+              games.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.awayTeam} @ {g.homeTeam}
+                  {g.winnerTeam ? ` · winner ${g.winnerTeam}` : ""}
+                </option>
+              ))
+            )}
+          </select>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="rounded-md border border-amber-700 px-3 py-1.5 text-sm text-amber-200 hover:bg-amber-950"
+              disabled={!selectedGame}
+              onClick={() =>
+                selectedGame && void doOverride(selectedGame.homeTeam)
+              }
+            >
+              Home{selectedGame ? ` (${selectedGame.homeTeam})` : ""}
+            </button>
+            <button
+              type="button"
+              className="rounded-md border border-amber-700 px-3 py-1.5 text-sm text-amber-200 hover:bg-amber-950"
+              disabled={!selectedGame}
+              onClick={() =>
+                selectedGame && void doOverride(selectedGame.awayTeam)
+              }
+            >
+              Away{selectedGame ? ` (${selectedGame.awayTeam})` : ""}
+            </button>
+            <button
+              type="button"
+              className="rounded-md border border-gray-600 px-3 py-1.5 text-sm hover:bg-gray-700"
+              disabled={!selectedGame}
+              onClick={() => void doOverride(null)}
+            >
+              Clear
+            </button>
+          </div>
+        </div>
       </section>
     </div>
   );
