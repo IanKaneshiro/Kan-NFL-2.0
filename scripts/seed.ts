@@ -1,8 +1,8 @@
 import "dotenv/config";
 import { eq } from "drizzle-orm";
-import { hashPassword } from "../src/auth/password";
 import { createSetupToken } from "../src/auth/setup-token";
 import { getDb, resetDbCache, schemaTables } from "../src/db";
+import { ensureCommissioner } from "../src/db/ensure-commissioner";
 import { newId } from "../src/domain/ids";
 
 async function main() {
@@ -14,36 +14,10 @@ async function main() {
   }
 
   resetDbCache();
+  await ensureCommissioner();
+
   const db = getDb();
   const t = schemaTables();
-
-  const commissionerEmail = (
-    process.env.SEED_COMMISSIONER_EMAIL ?? "iandkaneshiro@gmail.com"
-  ).toLowerCase();
-  const commissionerPassword =
-    process.env.SEED_COMMISSIONER_PASSWORD || "changeme";
-
-  const existing = await db
-    .select()
-    .from(t.users)
-    .where(eq(t.users.email, commissionerEmail));
-
-  if (!existing[0]) {
-    await db.insert(t.users).values({
-      id: newId(),
-      email: commissionerEmail,
-      displayName: "Commissioner",
-      role: "commissioner",
-      passwordHash: await hashPassword(commissionerPassword),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-    console.log(
-      `Created commissioner ${commissionerEmail} (change password at /account)`,
-    );
-  } else {
-    console.log(`Commissioner already exists: ${commissionerEmail}`);
-  }
 
   const samplePlayers = [
     { email: "brother1@example.com", displayName: "Brother One" },

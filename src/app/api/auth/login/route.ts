@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Cause, Effect, Exit } from "effect";
 import { getSession } from "@/auth/session";
 import { login } from "@/domain/users";
 import { jsonOk, mapDomainError } from "@/lib/api";
@@ -6,9 +6,13 @@ import { jsonOk, mapDomainError } from "@/lib/api";
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as { email?: string; password?: string };
-    const user = await Effect.runPromise(
+    const exit = await Effect.runPromiseExit(
       login(body.email ?? "", body.password ?? ""),
     );
+    if (Exit.isFailure(exit)) {
+      return mapDomainError(Cause.squash(exit.cause));
+    }
+    const user = exit.value;
     const session = await getSession();
     session.isLoggedIn = true;
     session.userId = user.id;

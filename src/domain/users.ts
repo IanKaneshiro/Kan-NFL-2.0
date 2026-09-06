@@ -153,9 +153,19 @@ export function login(email: string, password: string) {
         .from(t.users)
         .where(eq(t.users.email, normalized));
       const user = rows[0];
-      if (!user?.passwordHash) throw new InvalidCredentials({});
+      if (!user) {
+        console.warn(`login: no user for ${normalized}`);
+        throw new InvalidCredentials({});
+      }
+      if (!user.passwordHash) {
+        console.warn(`login: no password hash for ${normalized}`);
+        throw new InvalidCredentials({});
+      }
       const ok = await verifyPassword(password, user.passwordHash);
-      if (!ok) throw new InvalidCredentials({});
+      if (!ok) {
+        console.warn(`login: password mismatch for ${normalized}`);
+        throw new InvalidCredentials({});
+      }
       return {
         id: user.id,
         email: user.email,
@@ -164,8 +174,18 @@ export function login(email: string, password: string) {
         avatarId: resolveAvatarId(user.avatarId),
       };
     },
-    catch: (e) =>
-      e instanceof InvalidCredentials ? e : new InvalidCredentials({}),
+    catch: (e) => {
+      if (e instanceof InvalidCredentials) return e;
+      if (
+        e &&
+        typeof e === "object" &&
+        "_tag" in e &&
+        (e as { _tag: string })._tag === "InvalidCredentials"
+      ) {
+        return e as InvalidCredentials;
+      }
+      return e instanceof Error ? e : new Error(String(e));
+    },
   });
 }
 

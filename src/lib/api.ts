@@ -1,17 +1,58 @@
 import { NextResponse } from "next/server";
 
+const DOMAIN_TAGS = new Set([
+  "InvalidCredentials",
+  "Unauthorized",
+  "Forbidden",
+  "ValidationError",
+  "SetupTokenInvalid",
+  "GameLocked",
+  "NotFound",
+  "NflApiError",
+]);
+
+/** Effect.runPromise rejects with FiberFailure, which hides `_tag` from callers. */
+export function unwrapDomainError(error: unknown): unknown {
+  let current: unknown = error;
+  for (let i = 0; i < 8; i++) {
+    if (!current || typeof current !== "object") break;
+    const obj = current as Record<string, unknown>;
+    const tag = typeof obj._tag === "string" ? obj._tag : undefined;
+    if (tag && DOMAIN_TAGS.has(tag)) return current;
+    if ("error" in obj && obj.error !== current) {
+      current = obj.error;
+      continue;
+    }
+    if ("defect" in obj && obj.defect !== current) {
+      current = obj.defect;
+      continue;
+    }
+    if ("cause" in obj && obj.cause !== current) {
+      current = obj.cause;
+      continue;
+    }
+    break;
+  }
+  const text = String(error);
+  for (const tag of DOMAIN_TAGS) {
+    if (text.includes(tag)) return { _tag: tag, message: text };
+  }
+  return error;
+}
+
 export function jsonOk<T>(data: T, init?: ResponseInit) {
   return NextResponse.json(data, init);
 }
 
 export function mapDomainError(error: unknown): NextResponse {
+  const unwrapped = unwrapDomainError(error);
   const tag =
-    error && typeof error === "object" && "_tag" in error
-      ? String((error as { _tag: string })._tag)
+    unwrapped && typeof unwrapped === "object" && "_tag" in unwrapped
+      ? String((unwrapped as { _tag: string })._tag)
       : undefined;
   const message =
-    error && typeof error === "object" && "message" in error
-      ? String((error as { message: unknown }).message)
+    unwrapped && typeof unwrapped === "object" && "message" in unwrapped
+      ? String((unwrapped as { message: unknown }).message)
       : "Error";
 
   switch (tag) {
@@ -33,12 +74,17 @@ export function mapDomainError(error: unknown): NextResponse {
       );
     case "GameLocked":
       return NextResponse.json(
-        { error: "Game is locked", gameId: (error as { gameId?: string }).gameId },
+        {
+          error: "Game is locked",
+          gameId: (unwrapped as { gameId?: string }).gameId,
+        },
         { status: 409 },
       );
     case "NotFound":
       return NextResponse.json(
-        { error: `${(error as { entity?: string }).entity ?? "Resource"} not found` },
+        {
+          error: `${(unwrapped as { entity?: string }).entity ?? "Resource"} not found`,
+        },
         { status: 404 },
       );
     case "NflApiError":
