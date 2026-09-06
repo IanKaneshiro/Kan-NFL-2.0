@@ -148,6 +148,7 @@ export function login(email: string, password: string) {
       const db = getDb();
       const t = tables();
       const normalized = email.trim().toLowerCase();
+      const secret = password.trim();
       const rows = await db
         .select()
         .from(t.users)
@@ -161,7 +162,7 @@ export function login(email: string, password: string) {
         console.warn(`login: no password hash for ${normalized}`);
         throw new InvalidCredentials({});
       }
-      const ok = await verifyPassword(password, user.passwordHash);
+      const ok = await verifyPassword(secret, user.passwordHash);
       if (!ok) {
         console.warn(`login: password mismatch for ${normalized}`);
         throw new InvalidCredentials({});

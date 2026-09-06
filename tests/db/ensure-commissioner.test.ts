@@ -47,6 +47,7 @@ describe("ensureCommissioner", () => {
   it("moves commissioner@example.com to the seed email", async () => {
     const db = getDb();
     const t = schemaTables();
+    await db.delete(t.syncRuns);
     await db.delete(t.users);
     await db.insert(t.users).values({
       id: newId(),
