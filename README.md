@@ -8,7 +8,15 @@ Private brother pick’em for the NFL regular season (weeks 1–18).
 - **Deploy:** Render web + Postgres (same shape as `ians-mcp`); local SQLite
 
 Design: `docs/superpowers/specs/2026-08-08-kan-nfl-pickem-design.md`  
-Plan: `docs/superpowers/plans/2026-08-08-kan-nfl-pickem.md`
+Plan: `docs/superpowers/plans/2026-08-08-kan-nfl-pickem.md`  
+Product increment: `docs/superpowers/plans/2026-09-03-kan-nfl-product-increment.md`
+
+## Product (signed in)
+
+- **Home (`/`):** dashboard — avatar, display name, unpicked games left, next lock, quick links to Picks / Trends / Leaderboard
+- **Trends (`/trends`):** week consensus and who-picked-what (revealed after kickoff only)
+- **Account (`/account`):** change password, unique display name, preset avatar (32 NFL teams + 4 fun icons; no photo upload)
+- **PWA:** Add to Home Screen from the browser (manifest + icons; no offline service worker required)
 
 ## Local setup
 
@@ -41,17 +49,17 @@ npm run build
 3. They set a password and use login all season
 4. **Sync week** (or 1–18) after schedule is published; auto-sync also runs throttled on picks/leaderboard load
 5. After MNF, sync again so finals/winners land; leaderboard updates automatically
-6. Rare wrong score: **Override winner** with internal game id from the DB/UI (or set after inspecting picks payload)
+6. Rare wrong score: Admin → pick a week → **Override winner** from that week’s game list (`AWAY @ HOME — kickoff`); choose Home, Away, TIE, or Clear
 
 ## Render
 
 1. Blueprint: `render.yaml` (or Web Service + Postgres)
-2. Build: `npm ci --include=dev && npm run build` · Start: `npm run start` · Health: `/api/health`
-3. Set `SEASON_YEAR` and confirm `SESSION_SECRET` / `DATABASE_URL`
-4. Shell after first deploy:
+2. Build: `npm ci --include=dev && npm run build` · Start: `npm run db:apply && npm run start` · Health: `/api/health` (pings the database)
+3. **Keep-alive (Render sleep):** free web services spin down after idle. Set an external HTTP monitor (UptimeRobot or cron-job.org) for `https://<service>.onrender.com/api/health` every **5 minutes** — that is the reliable option. Optional: add repo secret `KEEPALIVE_URL` (same URL) for the scheduled GitHub Action in `.github/workflows/keep-alive.yml` (`*/10` cron + manual dispatch). GitHub cron is **not** minute-accurate; do not rely on it alone.
+4. Set `SEASON_YEAR` and confirm `SESSION_SECRET` / `DATABASE_URL`
+5. After first deploy, seed once with a real commissioner password (required in production):
 
 ```bash
-npm run db:apply
 SEED_COMMISSIONER_PASSWORD='…' npm run seed
 ```
 
