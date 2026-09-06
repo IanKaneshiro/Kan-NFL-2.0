@@ -39,7 +39,6 @@ export async function ensureCommissioner() {
   const t = schemaTables();
   const email = commissionerSeedEmail();
   const password = commissionerSeedPassword();
-  const reset = process.env.SEED_RESET_COMMISSIONER_PASSWORD === "true";
 
   const existing = await db
     .select()
@@ -53,11 +52,13 @@ export async function ensureCommissioner() {
       .from(t.users)
       .where(eq(t.users.email, LEGACY_COMMISSIONER_EMAIL));
     if (legacy[0]) {
+      const passwordHash =
+        legacy[0].passwordHash ?? (await hashPassword(password));
       await db
         .update(t.users)
         .set({
           email,
-          passwordHash: await hashPassword(password),
+          passwordHash,
           updatedAt: new Date(),
         })
         .where(eq(t.users.id, legacy[0].id));
@@ -82,7 +83,7 @@ export async function ensureCommissioner() {
     return;
   }
 
-  if (!user.passwordHash || reset) {
+  if (!user.passwordHash) {
     await db
       .update(t.users)
       .set({
@@ -90,11 +91,7 @@ export async function ensureCommissioner() {
         updatedAt: new Date(),
       })
       .where(eq(t.users.id, user.id));
-    console.log(
-      reset
-        ? `Reset commissioner password for ${email}`
-        : `Set missing password for ${email}`,
-    );
+    console.log(`Set missing password for ${email}`);
   }
 }
 

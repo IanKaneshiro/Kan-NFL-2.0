@@ -72,10 +72,9 @@ export function AccountForm() {
       setError(data.error ?? "Failed");
       return;
     }
-    setMessage("Password updated. Sign in again.");
+    setMessage("Password updated.");
     setCurrent("");
     setNew("");
-    window.location.href = "/login";
   }
 
   return (

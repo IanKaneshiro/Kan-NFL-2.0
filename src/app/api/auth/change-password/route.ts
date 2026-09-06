@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Cause, Effect, Exit } from "effect";
 import { getSession } from "@/auth/session";
 import { changePassword } from "@/domain/users";
 import { Unauthorized } from "@/domain/errors";
@@ -12,14 +12,16 @@ export async function POST(req: Request) {
       currentPassword?: string;
       newPassword?: string;
     };
-    await Effect.runPromise(
+    const exit = await Effect.runPromiseExit(
       changePassword(
         session.userId,
         body.currentPassword ?? "",
         body.newPassword ?? "",
       ),
     );
-    session.destroy();
+    if (Exit.isFailure(exit)) {
+      return mapDomainError(Cause.squash(exit.cause));
+    }
     return jsonOk({ ok: true });
   } catch (e) {
     return mapDomainError(e);

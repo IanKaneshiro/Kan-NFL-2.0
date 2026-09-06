@@ -72,4 +72,25 @@ describe("ensureCommissioner", () => {
       true,
     );
   });
+
+  it("does not overwrite an existing password hash", async () => {
+    const { hashPassword } = await import("@/auth/password");
+    const db = getDb();
+    const t = schemaTables();
+    const hashed = await hashPassword("my-real-password");
+    await db
+      .update(t.users)
+      .set({ passwordHash: hashed })
+      .where(eq(t.users.email, "iandkaneshiro@gmail.com"));
+    process.env.SEED_RESET_COMMISSIONER_PASSWORD = "true";
+    await ensureCommissioner();
+    const rows = await db
+      .select()
+      .from(t.users)
+      .where(eq(t.users.email, "iandkaneshiro@gmail.com"));
+    expect(await verifyPassword("my-real-password", rows[0]!.passwordHash!)).toBe(
+      true,
+    );
+    delete process.env.SEED_RESET_COMMISSIONER_PASSWORD;
+  });
 });
