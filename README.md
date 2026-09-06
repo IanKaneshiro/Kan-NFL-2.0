@@ -49,7 +49,7 @@ npm run build
 3. They set a password and use login all season
 4. **Sync week** (or 1–18) after schedule is published; auto-sync also runs throttled on picks/leaderboard load
 5. After MNF, sync again so finals/winners land; leaderboard updates automatically
-6. Rare wrong score: Admin → pick a week → **Override winner** from that week’s game list (`AWAY @ HOME — kickoff`); choose Home, Away, TIE, or Clear
+6. Rare wrong score: Admin → pick a week → **Override winner** from that week’s game list (`AWAY @ HOME`); choose Home, Away, or Clear
 
 ## Render
 
