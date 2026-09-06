@@ -18,7 +18,7 @@ async function main() {
   const t = schemaTables();
 
   const commissionerEmail = (
-    process.env.SEED_COMMISSIONER_EMAIL ?? "commissioner@example.com"
+    process.env.SEED_COMMISSIONER_EMAIL ?? "iandkaneshiro@gmail.com"
   ).toLowerCase();
   const commissionerPassword = process.env.SEED_COMMISSIONER_PASSWORD;
   if (process.env.NODE_ENV === "production") {

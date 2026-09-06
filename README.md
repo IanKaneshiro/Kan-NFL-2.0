@@ -33,7 +33,7 @@ npm run dev
 ```
 
 - Login: http://localhost:3000/login  
-  - Commissioner (seed): `commissioner@example.com` / `changeme` (or `SEED_COMMISSIONER_PASSWORD`)
+  - Commissioner (seed): `iandkaneshiro@gmail.com` / `changeme` (or `SEED_COMMISSIONER_PASSWORD`)
   - Seed prints `/setup?token=…` links for sample brothers
 - Health: http://localhost:3000/api/health
 
