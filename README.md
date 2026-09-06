@@ -55,14 +55,10 @@ npm run build
 ## Render
 
 1. Blueprint: `render.yaml` (or Web Service + Postgres)
-2. Build: `npm ci --include=dev && npm run build` · Start: `npm run db:apply && npm run start` · Health: `/api/health` (pings the database)
+2. Build: `npm ci --include=dev && npm run build` · Start: `npm run db:apply && npm run seed && npm run start` · Health: `/api/health`
 3. **Keep-alive (Render sleep):** free web services spin down after idle. Set an external HTTP monitor (UptimeRobot or cron-job.org) for `https://<service>.onrender.com/api/health` every **5 minutes** — that is the reliable option. Optional: add repo secret `KEEPALIVE_URL` (same URL) for the scheduled GitHub Action in `.github/workflows/keep-alive.yml` (`*/10` cron + manual dispatch). GitHub cron is **not** minute-accurate; do not rely on it alone.
 4. Set `SEASON_YEAR` and confirm `SESSION_SECRET` / `DATABASE_URL`
-5. After first deploy, seed once with a real commissioner password (required in production):
-
-```bash
-SEED_COMMISSIONER_PASSWORD='…' npm run seed
-```
+5. Seed runs on boot (idempotent). First login: `iandkaneshiro@gmail.com` / `changeme`, then **Account → Change password**. If start command is set in the Render dashboard, update it to match step 2.
 
 ## Stack
 
