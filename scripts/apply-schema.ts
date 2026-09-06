@@ -19,7 +19,6 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_uidx ON users(email);
-CREATE UNIQUE INDEX IF NOT EXISTS users_display_name_uidx ON users(display_name);
 
 CREATE TABLE IF NOT EXISTS games (
   id TEXT PRIMARY KEY,
@@ -73,7 +72,6 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_uidx ON users(email);
-CREATE UNIQUE INDEX IF NOT EXISTS users_display_name_uidx ON users(display_name);
 
 CREATE TABLE IF NOT EXISTS games (
   id TEXT PRIMARY KEY,
@@ -113,6 +111,47 @@ CREATE TABLE IF NOT EXISTS sync_runs (
 );
 `;
 
+function isDisplayNameIndexDuplicateError(e: unknown): boolean {
+  const msg = String(e);
+  return (
+    /unique constraint failed/i.test(msg) ||
+    /duplicate key/i.test(msg) ||
+    /could not create unique index/i.test(msg)
+  );
+}
+
+async function createDisplayNameUniqueIndexSqlite(
+  client: ReturnType<typeof createClient>,
+): Promise<void> {
+  try {
+    await client.execute(
+      "CREATE UNIQUE INDEX IF NOT EXISTS users_display_name_uidx ON users(display_name)",
+    );
+  } catch (e) {
+    if (!isDisplayNameIndexDuplicateError(e)) throw e;
+    console.error(
+      "WARNING: skipped users_display_name_uidx — duplicate display_name values exist; resolve before enforcing uniqueness:",
+      e,
+    );
+  }
+}
+
+async function createDisplayNameUniqueIndexPostgres(
+  sql: ReturnType<typeof postgres>,
+): Promise<void> {
+  try {
+    await sql.unsafe(
+      "CREATE UNIQUE INDEX IF NOT EXISTS users_display_name_uidx ON users(display_name)",
+    );
+  } catch (e) {
+    if (!isDisplayNameIndexDuplicateError(e)) throw e;
+    console.error(
+      "WARNING: skipped users_display_name_uidx — duplicate display_name values exist; resolve before enforcing uniqueness:",
+      e,
+    );
+  }
+}
+
 async function main() {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL is not set");
@@ -133,9 +172,7 @@ async function main() {
       const msg = String(e);
       if (!/duplicate column/i.test(msg)) throw e;
     }
-    await client.execute(
-      "CREATE UNIQUE INDEX IF NOT EXISTS users_display_name_uidx ON users(display_name)",
-    );
+    await createDisplayNameUniqueIndexSqlite(client);
     console.log(`Applied SQLite schema to ${abs}`);
     return;
   }
@@ -145,9 +182,7 @@ async function main() {
   await sql.unsafe(
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_id TEXT NOT NULL DEFAULT 'fun-football'",
   );
-  await sql.unsafe(
-    "CREATE UNIQUE INDEX IF NOT EXISTS users_display_name_uidx ON users(display_name)",
-  );
+  await createDisplayNameUniqueIndexPostgres(sql);
   await sql.end();
   console.log("Applied Postgres schema");
 }
