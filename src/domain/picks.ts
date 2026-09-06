@@ -24,8 +24,9 @@ export function savePicks(input: {
       const now = input.now ?? new Date();
       const db = getDb();
       const t = tables();
-      let saved = 0;
       const lockedGameIds: string[] = [];
+      const toWrite: { gameId: string; pickedTeam: string; week: number }[] =
+        [];
 
       for (const p of input.picks) {
         const games = await db
@@ -49,31 +50,40 @@ export function savePicks(input: {
             message: `Invalid team ${p.pickedTeam} for game ${p.gameId}`,
           });
         }
-        const existing = await db
-          .select()
-          .from(t.picks)
-          .where(
-            and(eq(t.picks.userId, input.userId), eq(t.picks.gameId, p.gameId)),
-          );
-        if (existing[0]) {
-          await db
-            .update(t.picks)
-            .set({ pickedTeam: p.pickedTeam, updatedAt: now })
-            .where(eq(t.picks.id, existing[0].id));
-        } else {
-          await db.insert(t.picks).values({
-            id: newId(),
-            userId: input.userId,
-            gameId: p.gameId,
-            week: game.week,
-            pickedTeam: p.pickedTeam,
-            createdAt: now,
-            updatedAt: now,
-          });
-        }
-        saved++;
+        toWrite.push({
+          gameId: p.gameId,
+          pickedTeam: p.pickedTeam,
+          week: game.week,
+        });
       }
-      return { saved, lockedGameIds };
+
+      await db.transaction(async (tx) => {
+        for (const p of toWrite) {
+          const existing = await tx
+            .select()
+            .from(t.picks)
+            .where(
+              and(eq(t.picks.userId, input.userId), eq(t.picks.gameId, p.gameId)),
+            );
+          if (existing[0]) {
+            await tx
+              .update(t.picks)
+              .set({ pickedTeam: p.pickedTeam, updatedAt: now })
+              .where(eq(t.picks.id, existing[0].id));
+          } else {
+            await tx.insert(t.picks).values({
+              id: newId(),
+              userId: input.userId,
+              gameId: p.gameId,
+              week: p.week,
+              pickedTeam: p.pickedTeam,
+              createdAt: now,
+              updatedAt: now,
+            });
+          }
+        }
+      });
+      return { saved: toWrite.length, lockedGameIds };
     },
     catch: (e) =>
       e instanceof ValidationError

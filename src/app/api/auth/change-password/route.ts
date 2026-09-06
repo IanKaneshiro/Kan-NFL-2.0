@@ -19,6 +19,7 @@ export async function POST(req: Request) {
         body.newPassword ?? "",
       ),
     );
+    session.destroy();
     return jsonOk({ ok: true });
   } catch (e) {
     return mapDomainError(e);

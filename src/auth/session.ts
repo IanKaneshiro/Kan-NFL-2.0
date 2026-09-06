@@ -1,51 +1,57 @@
-import { getIronSession, type SessionOptions } from "iron-session";
+import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
+import { eq } from "drizzle-orm";
 import { Effect } from "effect";
+import { getDb, schemaTables } from "@/db";
 import { Forbidden, Unauthorized } from "@/domain/errors";
+import { sessionOptions, type SessionData } from "@/auth/session-options";
 
-export type SessionData = {
-  isLoggedIn: boolean;
-  userId?: string;
-  role?: "player" | "commissioner";
-  email?: string;
-};
-
-/** Dashboard session lifetime (90 days). */
-export const SESSION_TTL_SEC = 60 * 60 * 24 * 90;
-
-export function sessionOptions(): SessionOptions {
-  const password = process.env.SESSION_SECRET;
-  if (!password || password.length < 32) {
-    throw new Error("SESSION_SECRET must be set and at least 32 characters");
-  }
-  return {
-    cookieName: "kan_nfl_session",
-    password,
-    ttl: SESSION_TTL_SEC,
-    cookieOptions: {
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: SESSION_TTL_SEC,
-    },
-  };
-}
+export {
+  sessionOptions,
+  SESSION_TTL_SEC,
+  type SessionData,
+} from "@/auth/session-options";
 
 export async function getSession() {
   return getIronSession<SessionData>(await cookies(), sessionOptions());
+}
+
+export async function liveUserRole(
+  userId: string,
+): Promise<"player" | "commissioner" | null> {
+  const db = getDb();
+  const t = schemaTables();
+  const rows = await db.select().from(t.users).where(eq(t.users.id, userId));
+  const role = rows[0]?.role;
+  if (role === "player" || role === "commissioner") return role;
+  return null;
+}
+
+export async function requireLiveCommissioner() {
+  const session = await getSession();
+  if (!session.isLoggedIn || !session.userId) throw new Unauthorized({});
+  const role = await liveUserRole(session.userId);
+  if (!role) throw new Unauthorized({});
+  if (role !== "commissioner") throw new Forbidden({});
+  return {
+    userId: session.userId,
+    role,
+    email: session.email,
+  };
 }
 
 export function requireSessionEffect() {
   return Effect.tryPromise({
     try: async () => {
       const session = await getSession();
-      if (!session.isLoggedIn || !session.userId || !session.role) {
+      if (!session.isLoggedIn || !session.userId) {
         throw new Unauthorized({});
       }
+      const role = await liveUserRole(session.userId);
+      if (!role) throw new Unauthorized({});
       return {
         userId: session.userId,
-        role: session.role,
+        role,
         email: session.email,
       };
     },

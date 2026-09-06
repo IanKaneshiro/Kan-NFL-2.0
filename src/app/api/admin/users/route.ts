@@ -1,19 +1,11 @@
 import { Effect } from "effect";
-import { getSession } from "@/auth/session";
-import { Forbidden, Unauthorized } from "@/domain/errors";
+import { requireLiveCommissioner } from "@/auth/session";
 import { createUser, listUsers } from "@/domain/users";
 import { jsonOk, mapDomainError } from "@/lib/api";
 
-async function requireCommissioner() {
-  const session = await getSession();
-  if (!session.isLoggedIn || !session.userId) throw new Unauthorized({});
-  if (session.role !== "commissioner") throw new Forbidden({});
-  return session;
-}
-
 export async function GET() {
   try {
-    await requireCommissioner();
+    await requireLiveCommissioner();
     const users = await Effect.runPromise(listUsers());
     return jsonOk({ users });
   } catch (e) {
@@ -23,7 +15,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    await requireCommissioner();
+    await requireLiveCommissioner();
     const body = (await req.json()) as {
       email?: string;
       displayName?: string;

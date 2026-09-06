@@ -72,6 +72,26 @@ describe("savePicks", () => {
     ]);
   });
 
+  it("does not persist earlier picks when a later pick is invalid", async () => {
+    const db = getDb();
+    const t = schemaTables();
+    await expect(
+      Effect.runPromise(
+        savePicks({
+          userId,
+          week: 1,
+          picks: [
+            { gameId: openGameId, pickedTeam: "KC" },
+            { gameId: "missing-game", pickedTeam: "KC" },
+          ],
+          now: new Date("2026-01-01T00:00:00Z"),
+        }),
+      ),
+    ).rejects.toThrow();
+    const rows = await db.select().from(t.picks);
+    expect(rows).toHaveLength(0);
+  });
+
   it("saves open games and skips locked", async () => {
     const result = await Effect.runPromise(
       savePicks({

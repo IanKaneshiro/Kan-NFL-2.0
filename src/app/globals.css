@@ -1,12 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0b1220;
-  --foreground: #e8eef9;
-  --card: #121a2b;
-  --accent: #3b82f6;
-  --muted: #94a3b8;
-  --border: #1e293b;
+  --background: #111827;
+  --foreground: #f9fafb;
+  --card: #1f2937;
+  --accent: #16a34a;
+  --muted: #9ca3af;
+  --border: #374151;
   --good: #22c55e;
   --bad: #ef4444;
 }
@@ -15,12 +15,13 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family:
-    ui-sans-serif,
+    Inter,
     system-ui,
     -apple-system,
-    Segoe UI,
+    BlinkMacSystemFont,
+    "Segoe UI",
     Roboto,
-    Helvetica,
+    "Helvetica Neue",
     Arial,
     sans-serif;
   min-height: 100vh;
@@ -35,4 +36,17 @@ input,
 select,
 button {
   font: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #6b7280;
+  border-radius: 4px;
 }

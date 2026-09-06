@@ -1,7 +1,10 @@
+import { getIronSession } from "iron-session";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { sessionOptions, type SessionData } from "@/auth/session-options";
 
 const PUBLIC_PREFIXES = [
+  "/",
   "/login",
   "/setup",
   "/api/auth/login",
@@ -9,11 +12,22 @@ const PUBLIC_PREFIXES = [
   "/api/health",
 ];
 
-export function middleware(request: NextRequest) {
+function deny(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const url = request.nextUrl.clone();
+  url.pathname = "/login";
+  url.searchParams.set("next", pathname);
+  return NextResponse.redirect(url);
+}
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (
-    PUBLIC_PREFIXES.some(
-      (p) => pathname === p || pathname.startsWith(p + "/"),
+    PUBLIC_PREFIXES.some((p) =>
+      p === "/" ? pathname === "/" : pathname === p || pathname.startsWith(p + "/"),
     )
   ) {
     return NextResponse.next();
@@ -26,17 +40,20 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const sessionCookie = request.cookies.get("kan_nfl_session");
-  if (!sessionCookie?.value) {
-    if (pathname.startsWith("/api/")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const response = NextResponse.next();
+  try {
+    const session = await getIronSession<SessionData>(
+      request,
+      response,
+      sessionOptions(),
+    );
+    if (!session.isLoggedIn || !session.userId) {
+      return deny(request);
     }
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
+    return response;
+  } catch {
+    return deny(request);
   }
-  return NextResponse.next();
 }
 
 export const config = {

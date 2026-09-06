@@ -20,8 +20,14 @@ async function main() {
   const commissionerEmail = (
     process.env.SEED_COMMISSIONER_EMAIL ?? "commissioner@example.com"
   ).toLowerCase();
-  const commissionerPassword =
-    process.env.SEED_COMMISSIONER_PASSWORD ?? "changeme";
+  const commissionerPassword = process.env.SEED_COMMISSIONER_PASSWORD;
+  if (process.env.NODE_ENV === "production") {
+    if (!commissionerPassword || commissionerPassword === "changeme") {
+      throw new Error(
+        "SEED_COMMISSIONER_PASSWORD must be set and not 'changeme' in production",
+      );
+    }
+  }
 
   const existing = await db
     .select()
@@ -34,11 +40,13 @@ async function main() {
       email: commissionerEmail,
       displayName: "Commissioner",
       role: "commissioner",
-      passwordHash: await hashPassword(commissionerPassword),
+      passwordHash: await hashPassword(commissionerPassword ?? "changeme"),
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-    console.log(`Created commissioner ${commissionerEmail} / ${commissionerPassword}`);
+    console.log(
+      `Created commissioner ${commissionerEmail} / ${commissionerPassword ?? "changeme"}`,
+    );
   } else {
     console.log(`Commissioner already exists: ${commissionerEmail}`);
   }

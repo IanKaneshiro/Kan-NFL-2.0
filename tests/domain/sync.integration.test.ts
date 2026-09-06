@@ -1,10 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { Effect } from "effect";
 import { eq } from "drizzle-orm";
 import { execSync } from "node:child_process";
 import { unlinkSync } from "node:fs";
 import { getDb, resetDbCache, schemaTables } from "@/db";
 import { newId } from "@/domain/ids";
-import { upsertNormalizedGames } from "@/domain/sync";
+import { overrideWinner, upsertNormalizedGames } from "@/domain/sync";
 import type { NormalizedGame } from "@/nfl/types";
 
 const DB = "file:./data/test-sync.db";
@@ -65,5 +66,61 @@ describe("upsertNormalizedGames", () => {
       .where(eq(t.games.externalId, "ext-1"));
     expect(again[0]?.winnerTeam).toBe("BUF");
     expect(again[0]?.winnerOverride).toBe(true);
+  });
+
+  it("keeps override status when ESPN later reports in_progress", async () => {
+    const base: NormalizedGame = {
+      externalId: "ext-status",
+      seasonYear: 2026,
+      week: 1,
+      kickoffAt: new Date("2026-09-13T17:00:00Z"),
+      homeTeam: "PHI",
+      awayTeam: "DAL",
+      status: "in_progress",
+      winnerTeam: null,
+    };
+    await upsertNormalizedGames([base]);
+    const db = getDb();
+    const t = schemaTables();
+    const rows = await db
+      .select()
+      .from(t.games)
+      .where(eq(t.games.externalId, "ext-status"));
+    await Effect.runPromise(overrideWinner(rows[0]!.id, "PHI"));
+
+    await upsertNormalizedGames([
+      { ...base, status: "in_progress", winnerTeam: null },
+    ]);
+    const again = await db
+      .select()
+      .from(t.games)
+      .where(eq(t.games.externalId, "ext-status"));
+    expect(again[0]?.winnerTeam).toBe("PHI");
+    expect(again[0]?.status).toBe("final");
+    expect(again[0]?.winnerOverride).toBe(true);
+  });
+
+  it("rejects override winner that is not playing", async () => {
+    const base: NormalizedGame = {
+      externalId: "ext-bad-team",
+      seasonYear: 2026,
+      week: 1,
+      kickoffAt: new Date("2026-09-13T17:00:00Z"),
+      homeTeam: "SF",
+      awayTeam: "SEA",
+      status: "scheduled",
+      winnerTeam: null,
+    };
+    await upsertNormalizedGames([base]);
+    const db = getDb();
+    const t = schemaTables();
+    const rows = await db
+      .select()
+      .from(t.games)
+      .where(eq(t.games.externalId, "ext-bad-team"));
+    await expect(
+      Effect.runPromise(overrideWinner(rows[0]!.id, "KC")),
+    ).rejects.toThrow();
+    await expect(Effect.runPromise(overrideWinner("", "SF"))).rejects.toThrow();
   });
 });
