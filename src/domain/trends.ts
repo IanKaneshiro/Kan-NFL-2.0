@@ -3,7 +3,6 @@ import { and, eq } from "drizzle-orm";
 import { getDb, schemaTables } from "@/db";
 import { resolveAvatarId } from "@/domain/avatars";
 import { NotFound, ValidationError } from "@/domain/errors";
-import { canRevealPicks } from "@/domain/reveal";
 import { getSeasonYear } from "@/domain/season";
 
 export function consensusLabel(
@@ -45,14 +44,12 @@ export function buildTrendGames(
     kickoffAt: Date;
   }[],
   picks: { gameId: string; pickedTeam: string; userId: string }[],
-  now: Date,
 ): { games: TrendGame[]; popular: { team: string; count: number }[] } {
   const rows: TrendGame[] = [];
   const sides: { team: string; count: number }[] = [];
 
   for (const g of games) {
     const kickoff = asDate(g.kickoffAt);
-    if (!canRevealPicks(kickoff, now)) continue;
 
     const gamePicks = picks.filter((p) => p.gameId === g.id);
     const homeCount = gamePicks.filter((p) => p.pickedTeam === g.homeTeam).length;
@@ -81,9 +78,8 @@ export function buildTrendGames(
   return { games: rows, popular };
 }
 
-export function getWeekTrends(week: number, now?: Date) {
+export function getWeekTrends(week: number) {
   return Effect.gen(function* () {
-    const when = now ?? new Date();
     const seasonYear = getSeasonYear();
     const db = getDb();
     const t = schemaTables();
@@ -114,7 +110,6 @@ export function getWeekTrends(week: number, now?: Date) {
         pickedTeam: p.pickedTeam,
         userId: p.userId,
       })),
-      when,
     );
 
     return {
@@ -125,10 +120,9 @@ export function getWeekTrends(week: number, now?: Date) {
   });
 }
 
-export function getTeamPickers(gameId: string, pickedTeam: string, now?: Date) {
+export function getTeamPickers(gameId: string, pickedTeam: string) {
   return Effect.tryPromise({
     try: async () => {
-      const when = now ?? new Date();
       const db = getDb();
       const t = schemaTables();
       const found = await db
@@ -137,10 +131,6 @@ export function getTeamPickers(gameId: string, pickedTeam: string, now?: Date) {
         .where(eq(t.games.id, gameId));
       const game = found[0];
       if (!game) throw new NotFound({ entity: "game" });
-      const kickoff = asDate(game.kickoffAt);
-      if (!canRevealPicks(kickoff, when)) {
-        throw new NotFound({ entity: "game" });
-      }
 
       const pickRows = await db
         .select()

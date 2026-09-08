@@ -20,8 +20,7 @@ describe("consensusLabel", () => {
 });
 
 describe("buildTrendGames", () => {
-  it("omits games before kickoff", () => {
-    const now = new Date("2026-09-10T18:00:00Z");
+  it("includes games before kickoff", () => {
     const games = [
       { id: "1", homeTeam: "KC", awayTeam: "BUF", kickoffAt: new Date("2026-09-10T17:00:00Z") },
       { id: "2", homeTeam: "DAL", awayTeam: "NYG", kickoffAt: new Date("2026-09-10T20:00:00Z") },
@@ -32,12 +31,14 @@ describe("buildTrendGames", () => {
       { gameId: "1", pickedTeam: "KC", userId: "c" },
       { gameId: "2", pickedTeam: "DAL", userId: "a" },
     ];
-    const { games: rows, popular } = buildTrendGames(games, picks, now);
-    expect(rows).toHaveLength(1);
+    const { games: rows, popular } = buildTrendGames(games, picks);
+    expect(rows).toHaveLength(2);
     expect(rows[0].gameId).toBe("1");
     expect(rows[0].homeCount).toBe(2);
     expect(rows[0].awayCount).toBe(1);
     expect(rows[0].homePct).toBe(67);
+    expect(rows[1].gameId).toBe("2");
+    expect(rows[1].homeCount).toBe(1);
     expect(popular[0]).toEqual({ team: "KC", count: 2 });
   });
 });

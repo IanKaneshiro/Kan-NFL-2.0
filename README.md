@@ -3,7 +3,7 @@
 Private brother pick’em for the NFL regular season (weeks 1–18).
 
 - **Auth:** allowlisted users, one-time setup link → password, self-service login/logout (iron-session, 90 days)
-- **Picks:** per-game lock at kickoff; others’ picks reveal after kickoff
+- **Picks:** per-game lock at kickoff; Trends show everyone’s picks at all times
 - **Scores:** free ESPN scoreboard API (server-side), points derived from correct picks
 - **Deploy:** Render web + Postgres (same shape as `ians-mcp`); local SQLite
 
@@ -14,7 +14,7 @@ Product increment: `docs/superpowers/plans/2026-09-03-kan-nfl-product-increment.
 ## Product (signed in)
 
 - **Home (`/`):** dashboard — avatar, display name, unpicked games left, next lock, quick links to Picks / Trends / Leaderboard
-- **Trends (`/trends`):** week consensus and who-picked-what (revealed after kickoff only)
+- **Trends (`/trends`):** week consensus and who-picked-what (visible before kickoff)
 - **Account (`/account`):** change password, unique display name, preset avatar (32 NFL teams + 4 fun icons; no photo upload)
 - **PWA:** Add to Home Screen from the browser (manifest + icons; no offline service worker required)
 

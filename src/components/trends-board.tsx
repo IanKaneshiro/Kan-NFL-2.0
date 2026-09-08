@@ -137,7 +137,7 @@ export function TrendsBoard() {
           📈 Trends
         </h1>
         <p className="text-sm text-gray-300 sm:text-base">
-          Consensus after kickoff — tap a side to see who picked it
+          Live consensus — tap a side to see who picked it
         </p>
       </header>
 
@@ -168,7 +168,7 @@ export function TrendsBoard() {
         <div className="py-12 text-center">
           <div className="mb-4 text-6xl">🏈</div>
           <p className="text-xl text-gray-300">
-            No kicked-off games this week yet.
+            No games this week yet.
           </p>
         </div>
       ) : (

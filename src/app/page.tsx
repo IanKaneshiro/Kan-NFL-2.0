@@ -69,8 +69,7 @@ export default async function Home() {
             Lock at kickoff
           </h3>
           <p className="text-gray-300">
-            Each game locks on its own. After kickoff, everyone&apos;s pick is
-            visible.
+            Each game locks on its own. Trends show everyone&apos;s picks anytime.
           </p>
         </div>
         <div className="rounded-xl border border-gray-700 bg-gray-800 p-6 text-center">
