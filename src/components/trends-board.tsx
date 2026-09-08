@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AvatarMark } from "@/components/avatar-mark";
+import { TeamLogo } from "@/components/team-logo";
 
 type TrendGame = {
   gameId: string;
@@ -37,14 +38,25 @@ type ModalState = {
 function consensusClass(label: TrendGame["consensus"]): string {
   switch (label) {
     case "High":
-      return "bg-green-900/60 text-green-300";
+      return "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30";
     case "Moderate":
-      return "bg-amber-900/60 text-amber-200";
+      return "bg-amber-500/15 text-amber-200 ring-1 ring-amber-500/30";
     case "Slight":
-      return "bg-blue-900/60 text-blue-200";
+      return "bg-sky-500/15 text-sky-200 ring-1 ring-sky-500/30";
     default:
-      return "bg-gray-700 text-gray-300";
+      return "bg-gray-700/80 text-gray-300 ring-1 ring-gray-600";
   }
+}
+
+function formatKickoff(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 export function TrendsBoard() {
@@ -88,6 +100,13 @@ export function TrendsBoard() {
     return () => window.removeEventListener("keydown", onKey);
   }, [modal]);
 
+  const games = useMemo(() => {
+    if (!data) return [];
+    return [...data.games].sort(
+      (a, b) => Date.parse(a.kickoffAt) - Date.parse(b.kickoffAt),
+    );
+  }, [data]);
+
   async function openSide(game: TrendGame, pickedTeam: string) {
     const fetchId = ++pickerFetchId.current;
     setModal({ game, pickedTeam, pickers: null, error: null });
@@ -113,8 +132,8 @@ export function TrendsBoard() {
       }
       setModal((prev) =>
         prev &&
-        prev.game.gameId === game.gameId &&
-        prev.pickedTeam === pickedTeam
+          prev.game.gameId === game.gameId &&
+          prev.pickedTeam === pickedTeam
           ? { ...prev, pickers: body.pickers ?? [], error: null }
           : prev,
       );
@@ -131,104 +150,162 @@ export function TrendsBoard() {
   }
 
   return (
-    <div className="flex flex-col items-center">
-      <header className="mb-8 w-full text-center">
-        <h1 className="mb-2 text-3xl font-bold text-white sm:text-4xl">
-          📈 Trends
-        </h1>
-        <p className="text-sm text-gray-300 sm:text-base">
-          Live consensus — tap a side to see who picked it
-        </p>
+    <div className="mx-auto flex w-full max-w-2xl flex-col">
+      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold tracking-[0.2em] text-emerald-400 uppercase">
+            This week
+          </p>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+            Trends
+          </h1>
+          <p className="mt-1 text-sm text-gray-400">
+            Live consensus. Tap a side to see who&apos;s on it.
+          </p>
+        </div>
+        <label className="flex items-center gap-2 text-sm text-gray-300">
+          Week
+          <select
+            className="rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-white"
+            value={week}
+            onChange={(e) => {
+              const next = Number(e.target.value);
+              setWeek(next);
+              void load(next);
+            }}
+          >
+            {Array.from({ length: 18 }, (_, i) => i + 1).map((w) => (
+              <option key={w} value={w}>
+                {w}
+              </option>
+            ))}
+          </select>
+        </label>
       </header>
-
-      <label className="mb-8 flex items-center gap-2 text-sm text-gray-300">
-        Week
-        <select
-          className="rounded-md border border-gray-600 bg-gray-800 px-2 py-1"
-          value={week}
-          onChange={(e) => {
-            const next = Number(e.target.value);
-            setWeek(next);
-            void load(next);
-          }}
-        >
-          {Array.from({ length: 18 }, (_, i) => i + 1).map((w) => (
-            <option key={w} value={w}>
-              Week {w}
-            </option>
-          ))}
-        </select>
-      </label>
 
       {error && <p className="mb-4 text-sm text-red-400">{error}</p>}
 
       {loading && !data ? (
         <p className="text-gray-400">Loading…</p>
-      ) : !data?.games.length ? (
-        <div className="py-12 text-center">
-          <div className="mb-4 text-6xl">🏈</div>
-          <p className="text-xl text-gray-300">
-            No games this week yet.
-          </p>
+      ) : !games.length ? (
+        <div className="rounded-2xl border border-dashed border-gray-700 bg-gray-800/40 py-16 text-center">
+          <p className="text-lg text-gray-300">No games this week yet.</p>
         </div>
       ) : (
-        <div className="w-full space-y-6">
-          {data.popular.length > 0 && (
-            <div className="rounded-xl border border-gray-700 bg-gray-800 p-4">
-              <h2 className="mb-3 text-sm font-semibold tracking-wider text-gray-400 uppercase">
-                Popular picks
+        <div className="space-y-5">
+          {data && data.popular.some((p) => p.count > 0) && (
+            <div className="rounded-2xl border border-gray-700/80 bg-gradient-to-br from-gray-800 to-gray-900 p-4">
+              <h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-400 uppercase">
+                Most picked
               </h2>
               <ul className="flex flex-wrap gap-2">
-                {data.popular.map((p) => (
-                  <li
-                    key={`${p.team}-${p.count}`}
-                    className="rounded-full bg-gray-700 px-3 py-1 text-sm text-white"
-                  >
-                    {p.team} · {p.count}
-                  </li>
-                ))}
+                {data.popular
+                  .filter((p) => p.count > 0)
+                  .map((p) => (
+                    <li
+                      key={`${p.team}-${p.count}`}
+                      className="flex items-center gap-2 rounded-full bg-gray-900/80 py-1 pr-3 pl-1 ring-1 ring-gray-700"
+                    >
+                      <TeamLogo abbr={p.team} size="sm" />
+                      <span className="text-sm font-medium text-white">
+                        {p.team}
+                      </span>
+                      <span className="text-xs text-gray-400">{p.count}</span>
+                    </li>
+                  ))}
               </ul>
             </div>
           )}
 
-          {data.games.map((g) => (
-            <div
-              key={g.gameId}
-              className="rounded-xl border border-gray-700 bg-gray-800 p-6 shadow-lg"
-            >
-              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <h2 className="text-xl font-bold text-white">
-                  {g.awayTeam} <span className="text-gray-400">@</span> {g.homeTeam}
-                </h2>
-                <span
-                  className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold ${consensusClass(g.consensus)}`}
-                >
-                  {g.consensus} consensus
-                </span>
-              </div>
+          {games.map((g) => {
+            const total = g.homeCount + g.awayCount;
+            return (
+              <article
+                key={g.gameId}
+                className="overflow-hidden rounded-2xl border border-gray-700/80 bg-gray-800/90 shadow-lg shadow-black/20"
+              >
+                <div className="flex items-center justify-between gap-3 px-4 pt-4 pb-2">
+                  <p className="text-xs text-gray-400">
+                    {formatKickoff(g.kickoffAt)}
+                  </p>
+                  <span
+                    className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${consensusClass(g.consensus)}`}
+                  >
+                    {total === 0 ? "No picks" : `${g.consensus} lean`}
+                  </span>
+                </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <SideBar
-                  team={g.awayTeam}
-                  pct={g.awayPct}
-                  count={g.awayCount}
-                  onClick={() => void openSide(g, g.awayTeam)}
-                />
-                <SideBar
-                  team={g.homeTeam}
-                  pct={g.homePct}
-                  count={g.homeCount}
-                  onClick={() => void openSide(g, g.homeTeam)}
-                />
-              </div>
-            </div>
-          ))}
+                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => void openSide(g, g.awayTeam)}
+                    className="flex flex-col items-center gap-2 rounded-xl p-2 hover:bg-gray-700/50"
+                  >
+                    <TeamLogo abbr={g.awayTeam} size="xl" />
+                    <span className="text-sm font-bold text-white">
+                      {g.awayTeam}
+                    </span>
+                    <span className="text-xs text-gray-400">Away</span>
+                  </button>
+                  <span className="text-xs font-semibold text-gray-500">
+                    @
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void openSide(g, g.homeTeam)}
+                    className="flex flex-col items-center gap-2 rounded-xl p-2 hover:bg-gray-700/50"
+                  >
+                    <TeamLogo abbr={g.homeTeam} size="xl" />
+                    <span className="text-sm font-bold text-white">
+                      {g.homeTeam}
+                    </span>
+                    <span className="text-xs text-gray-400">Home</span>
+                  </button>
+                </div>
+
+                <div className="px-4 pb-4">
+                  <div className="mb-1.5 flex justify-between text-xs font-medium text-gray-300">
+                    <button
+                      type="button"
+                      onClick={() => void openSide(g, g.awayTeam)}
+                      className="hover:text-white"
+                    >
+                      {g.awayPct}% · {g.awayCount}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void openSide(g, g.homeTeam)}
+                      className="hover:text-white"
+                    >
+                      {g.homeCount} · {g.homePct}%
+                    </button>
+                  </div>
+                  <div className="flex h-3 overflow-hidden rounded-full bg-gray-900 ring-1 ring-gray-700">
+                    <button
+                      type="button"
+                      aria-label={`${g.awayTeam} ${g.awayPct} percent`}
+                      onClick={() => void openSide(g, g.awayTeam)}
+                      className="bg-sky-500/90 hover:bg-sky-400"
+                      style={{ width: total === 0 ? "50%" : `${g.awayPct}%` }}
+                    />
+                    <button
+                      type="button"
+                      aria-label={`${g.homeTeam} ${g.homePct} percent`}
+                      onClick={() => void openSide(g, g.homeTeam)}
+                      className="bg-emerald-500/90 hover:bg-emerald-400"
+                      style={{ width: total === 0 ? "50%" : `${g.homePct}%` }}
+                    />
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
       )}
 
       {modal && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-4 sm:items-center"
           onClick={() => setModal(null)}
           role="presentation"
         >
@@ -236,15 +313,20 @@ export function TrendsBoard() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="pickers-title"
-            className="w-full max-w-md rounded-xl border border-gray-700 bg-gray-900 p-5 shadow-xl"
+            className="w-full max-w-md rounded-2xl border border-gray-700 bg-gray-900 p-5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 id="pickers-title" className="text-lg font-bold text-white">
-              Who picked {modal.pickedTeam}
-            </h3>
-            <p className="mt-1 text-sm text-gray-400">
-              {modal.game.awayTeam} @ {modal.game.homeTeam}
-            </p>
+            <div className="flex items-center gap-3">
+              <TeamLogo abbr={modal.pickedTeam} size="lg" />
+              <div>
+                <h3 id="pickers-title" className="text-lg font-bold text-white">
+                  {modal.pickedTeam}
+                </h3>
+                <p className="text-sm text-gray-400">
+                  {modal.game.awayTeam} @ {modal.game.homeTeam}
+                </p>
+              </div>
+            </div>
             {modal.error && (
               <p className="mt-3 text-sm text-red-400">{modal.error}</p>
             )}
@@ -259,17 +341,19 @@ export function TrendsBoard() {
                 {modal.pickers?.map((p) => (
                   <li
                     key={p.userId}
-                    className="flex items-center gap-3 rounded-lg bg-gray-800 px-3 py-2"
+                    className="flex items-center gap-3 rounded-xl bg-gray-800 px-3 py-2"
                   >
-                    <AvatarMark avatarId={p.avatarId} size="sm" />
-                    <span className="text-white">{p.displayName}</span>
+                    <AvatarMark avatarId={p.avatarId} size="md" />
+                    <span className="font-medium text-white">
+                      {p.displayName}
+                    </span>
                   </li>
                 ))}
               </ul>
             )}
             <button
               type="button"
-              className="mt-5 w-full rounded-lg bg-gray-700 px-4 py-2 text-sm text-white hover:bg-gray-600"
+              className="mt-5 w-full rounded-xl bg-gray-800 px-4 py-2.5 text-sm text-white ring-1 ring-gray-700 hover:bg-gray-700"
               onClick={() => setModal(null)}
             >
               Close
@@ -278,38 +362,5 @@ export function TrendsBoard() {
         </div>
       )}
     </div>
-  );
-}
-
-function SideBar({
-  team,
-  pct,
-  count,
-  onClick,
-}: {
-  team: string;
-  pct: number;
-  count: number;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-lg border border-gray-600 bg-gray-700 p-4 text-left hover:border-gray-500"
-    >
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="font-semibold text-white">{team}</span>
-        <span className="text-sm text-gray-300">
-          {pct}% · {count}
-        </span>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full bg-gray-800">
-        <div
-          className="h-full rounded-full bg-blue-500"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </button>
   );
 }

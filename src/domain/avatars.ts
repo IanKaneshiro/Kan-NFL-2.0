@@ -72,3 +72,26 @@ export function getAvatar(id: string | null | undefined): AvatarDef {
   const resolved = resolveAvatarId(id);
   return AVATARS.find((a) => a.id === resolved)!;
 }
+
+/** ESPN uses WSH for Washington; our catalog uses was. */
+export function espnLogoAbbr(nflIdOrTeamAbbr: string): string {
+  const raw = nflIdOrTeamAbbr
+    .trim()
+    .toLowerCase()
+    .replace(/^nfl-/, "");
+  if (raw === "was") return "wsh";
+  return raw;
+}
+
+export function avatarIdForTeamAbbr(abbr: string): string | null {
+  const raw = abbr.trim().toLowerCase();
+  const mapped = raw === "wsh" ? "was" : raw;
+  const id = `nfl-${mapped}`;
+  return isValidAvatarId(id) ? id : null;
+}
+
+export function avatarSrc(id: string | null | undefined): string {
+  const resolved = resolveAvatarId(id);
+  if (resolved.startsWith("fun-")) return `/avatars/${resolved}.svg`;
+  return `/avatars/${resolved}.png`;
+}

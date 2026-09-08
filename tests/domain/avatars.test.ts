@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   AVATARS,
   DEFAULT_AVATAR_ID,
+  avatarIdForTeamAbbr,
+  avatarSrc,
+  espnLogoAbbr,
   isValidAvatarId,
   resolveAvatarId,
 } from "@/domain/avatars";
@@ -26,5 +29,14 @@ describe("avatars catalog", () => {
     expect(resolveAvatarId("nfl-buf")).toBe("nfl-buf");
     expect(resolveAvatarId("nope")).toBe(DEFAULT_AVATAR_ID);
     expect(resolveAvatarId(undefined)).toBe(DEFAULT_AVATAR_ID);
+  });
+
+  it("maps team abbreviations to catalog ids and static paths", () => {
+    expect(avatarIdForTeamAbbr("KC")).toBe("nfl-kc");
+    expect(avatarIdForTeamAbbr("WSH")).toBe("nfl-was");
+    expect(avatarIdForTeamAbbr("xx")).toBeNull();
+    expect(espnLogoAbbr("nfl-was")).toBe("wsh");
+    expect(avatarSrc("nfl-kc")).toBe("/avatars/nfl-kc.png");
+    expect(avatarSrc("fun-football")).toBe("/avatars/fun-football.svg");
   });
 });

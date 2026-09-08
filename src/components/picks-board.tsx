@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { TeamLogo } from "@/components/team-logo";
 
 type Game = {
   id: string;
@@ -242,6 +243,7 @@ export function PicksBoard({ initialWeek }: { initialWeek?: number }) {
                             <span className="h-2.5 w-2.5 rounded-full bg-blue-600" />
                           )}
                         </span>
+                        <TeamLogo abbr={opt.team} size="lg" />
                         <div className="flex-1">
                           <span className="text-lg font-semibold text-white">
                             {opt.label}

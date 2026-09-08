@@ -106,13 +106,13 @@ export function AccountForm() {
                   type="button"
                   title={a.label}
                   onClick={() => setAvatarId(a.id)}
-                  className={`flex flex-col items-center rounded-lg border p-1 ${
+                  className={`flex flex-col items-center rounded-xl border p-1.5 ${
                     selected
                       ? "border-green-500 bg-gray-700"
                       : "border-gray-700 bg-gray-800 hover:border-gray-500"
                   }`}
                 >
-                  <AvatarMark avatarId={a.id} size="sm" />
+                  <AvatarMark avatarId={a.id} size="md" />
                 </button>
               );
             })}
