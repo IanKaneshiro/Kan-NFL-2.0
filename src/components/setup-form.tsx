@@ -74,7 +74,7 @@ export function SetupForm({ token }: { token: string }) {
       <button
         type="submit"
         disabled={loading}
-        className="rounded-xl bg-gradient-to-r from-green-600 to-green-700 px-4 py-3 font-semibold text-white hover:from-green-700 hover:to-green-800 disabled:opacity-50"
+        className="rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
       >
         {loading ? "Saving…" : "Set password & enter"}
       </button>

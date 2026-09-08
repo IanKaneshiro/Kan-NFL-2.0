@@ -156,7 +156,7 @@ export function TrendsBoard() {
           <p className="text-xs font-semibold tracking-[0.2em] text-emerald-400 uppercase">
             This week
           </p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-white sm:text-4xl">
             Trends
           </h1>
           <p className="mt-1 text-sm text-gray-400">
@@ -241,7 +241,7 @@ export function TrendsBoard() {
                     onClick={() => void openSide(g, g.awayTeam)}
                     className="flex flex-col items-center gap-2 rounded-xl p-2 hover:bg-gray-700/50"
                   >
-                    <TeamLogo abbr={g.awayTeam} size="xl" />
+                    <TeamLogo abbr={g.awayTeam} size="lg" />
                     <span className="text-sm font-bold text-white">
                       {g.awayTeam}
                     </span>
@@ -255,7 +255,7 @@ export function TrendsBoard() {
                     onClick={() => void openSide(g, g.homeTeam)}
                     className="flex flex-col items-center gap-2 rounded-xl p-2 hover:bg-gray-700/50"
                   >
-                    <TeamLogo abbr={g.homeTeam} size="xl" />
+                    <TeamLogo abbr={g.homeTeam} size="lg" />
                     <span className="text-sm font-bold text-white">
                       {g.homeTeam}
                     </span>
@@ -305,7 +305,7 @@ export function TrendsBoard() {
 
       {modal && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-4 sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-3 pb-[calc(4.75rem+env(safe-area-inset-bottom))] sm:items-center sm:p-4 sm:pb-4"
           onClick={() => setModal(null)}
           role="presentation"
         >

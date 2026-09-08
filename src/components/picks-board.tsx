@@ -130,35 +130,38 @@ export function PicksBoard({ initialWeek }: { initialWeek?: number }) {
   }
 
   return (
-    <div className="flex flex-col items-center">
-      <header className="mb-8 w-full text-center">
-        <h1 className="mb-2 text-3xl font-bold text-white sm:text-4xl">
-          Week {view?.week ?? week} Picks
-          {(view?.week ?? week) === currentWeek ? " (Current Week)" : ""}
-        </h1>
-        <p className="text-sm text-gray-300 sm:text-base">
-          Select the team you think will win each game
-        </p>
+    <div className="mx-auto flex w-full max-w-2xl flex-col">
+      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold tracking-[0.2em] text-emerald-400 uppercase">
+            {(view?.week ?? week) === currentWeek ? "Current week" : "Season"}
+          </p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-white sm:text-4xl">
+            Week {view?.week ?? week}
+          </h1>
+          <p className="mt-1 text-sm text-gray-400">
+            Pick a winner. You can change it until kickoff.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => changeWeek("prev")}
+            disabled={week === 1}
+            className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Prev
+          </button>
+          <button
+            type="button"
+            onClick={() => changeWeek("next")}
+            disabled={week === 18}
+            className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Next
+          </button>
+        </div>
       </header>
-
-      <div className="mb-8 flex w-full max-w-md flex-col justify-center space-y-3 sm:flex-row sm:space-y-0 sm:space-x-6">
-        <button
-          type="button"
-          onClick={() => changeWeek("prev")}
-          disabled={week === 1}
-          className="w-full rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white shadow-lg hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-600 disabled:shadow-none sm:w-auto sm:text-base"
-        >
-          ← Previous Week
-        </button>
-        <button
-          type="button"
-          onClick={() => changeWeek("next")}
-          disabled={week === 18}
-          className="w-full rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white shadow-lg hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-600 disabled:shadow-none sm:w-auto sm:text-base"
-        >
-          Next Week →
-        </button>
-      </div>
 
       {view?.staleWarning && (
         <p className="mb-4 w-full rounded-lg border border-amber-800/50 bg-amber-950/40 px-3 py-2 text-sm text-amber-200">
@@ -185,30 +188,26 @@ export function PicksBoard({ initialWeek }: { initialWeek?: number }) {
             return (
               <div
                 key={g.id}
-                className={`rounded-xl border bg-gray-800 p-6 shadow-lg ${
+                className={`rounded-2xl border bg-gray-800/90 p-3 shadow-lg shadow-black/20 sm:p-5 ${
                   g.locked
-                    ? "border-gray-600 opacity-90"
-                    : "border-gray-700 hover:border-gray-600"
+                    ? "border-gray-700 opacity-90"
+                    : "border-gray-700/80"
                 }`}
               >
-                <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                  <h2 className="text-xl font-bold text-white sm:text-2xl">
-                    {awayLabel} <span className="text-gray-400">@</span> {homeLabel}
+                <div className="mb-3 flex items-baseline justify-between gap-2">
+                  <h2 className="text-sm font-bold text-white sm:text-lg">
+                    {g.awayTeam} <span className="text-gray-500">@</span> {g.homeTeam}
                   </h2>
-                  <div className="mt-2 flex flex-col sm:mt-0 sm:items-end">
-                    <span className="text-sm text-gray-300">
-                      {new Date(g.kickoffAt).toLocaleDateString()}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {new Date(g.kickoffAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
+                  <span className="shrink-0 text-[11px] text-gray-400">
+                    {new Date(g.kickoffAt).toLocaleString(undefined, {
+                      weekday: "short",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-2 gap-2">
                   {(
                     [
                       { team: g.awayTeam, label: awayLabel, side: "Away" },
@@ -224,33 +223,26 @@ export function PicksBoard({ initialWeek }: { initialWeek?: number }) {
                         onClick={() =>
                           setPicks((prev) => ({ ...prev, [g.id]: opt.team }))
                         }
-                        className={`flex items-center space-x-3 rounded-lg border-2 p-4 text-left ${
+                        className={`flex min-h-16 flex-col items-center gap-1 rounded-xl border-2 p-2 text-center sm:min-h-0 sm:flex-row sm:gap-3 sm:p-3 sm:text-left ${
                           selected
-                            ? "border-blue-500 bg-blue-600 shadow-lg"
+                            ? "border-emerald-500 bg-emerald-950/50 shadow-lg"
                             : g.locked
-                              ? "cursor-not-allowed border-gray-600 bg-gray-700"
-                              : "border-gray-600 bg-gray-700 hover:border-gray-500"
+                              ? "cursor-not-allowed border-gray-700 bg-gray-800"
+                              : "border-gray-600 bg-gray-700/80 hover:border-gray-500"
                         }`}
                       >
-                        <span
-                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
-                            selected
-                              ? "border-white bg-white"
-                              : "border-gray-400"
-                          }`}
-                        >
-                          {selected && (
-                            <span className="h-2.5 w-2.5 rounded-full bg-blue-600" />
-                          )}
-                        </span>
-                        <TeamLogo abbr={opt.team} size="lg" />
-                        <div className="flex-1">
-                          <span className="text-lg font-semibold text-white">
-                            {opt.label}
+                        <TeamLogo abbr={opt.team} size="md" />
+                        <div className="min-w-0">
+                          <span className="block text-sm font-semibold text-white sm:text-lg">
+                            {opt.team}
                           </span>
-                          <div className="mt-1 text-xs text-gray-300">
-                            {opt.side}
+                          <div className="hidden text-xs text-gray-300 sm:block">
+                            {opt.label}
+                            {opt.side ? ` · ${opt.side}` : ""}
                             {g.winnerTeam === opt.team ? " · winner" : ""}
+                          </div>
+                          <div className="text-[10px] text-gray-400 sm:hidden">
+                            {opt.side}
                           </div>
                         </div>
                       </button>
@@ -294,16 +286,16 @@ export function PicksBoard({ initialWeek }: { initialWeek?: number }) {
       )}
 
       {!loading && view && view.games.length > 0 && (
-        <div className="mt-8 w-full max-w-md">
+        <div className="sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-20 mt-6 w-full md:bottom-4">
           <button
             type="button"
             onClick={save}
             disabled={saving || !view.games.some((g) => !g.locked)}
-            className="w-full rounded-xl bg-gradient-to-r from-green-600 to-green-700 px-8 py-4 text-lg font-semibold text-white shadow-lg hover:from-green-700 hover:to-green-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-xl bg-emerald-600 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-emerald-900/40 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {saving ? "Saving…" : "🏈 Submit Picks"}
+            {saving ? "Saving…" : "Save picks"}
           </button>
-          <p className="mt-3 text-center text-sm text-gray-400">
+          <p className="mt-2 text-center text-sm text-gray-400">
             {Object.keys(picks).length} of {view.games.length} games selected
           </p>
         </div>

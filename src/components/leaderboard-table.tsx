@@ -56,34 +56,38 @@ export function LeaderboardTable() {
   const top = rows.slice(0, 3);
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="mb-8 text-center">
-        <h1 className="mb-2 text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
-          🏆 Leaderboard
-        </h1>
-        <p className="text-sm text-gray-300 sm:text-base">
-          See who&apos;s dominating the NFL Pick&apos;em season!
-        </p>
-      </div>
-
-      <label className="mb-8 flex items-center gap-2 text-sm text-gray-300">
-        Scope
-        <select
-          className="rounded-md border border-gray-600 bg-gray-800 px-2 py-1"
-          value={week}
-          onChange={(e) => {
-            setWeek(e.target.value);
-            void load(e.target.value);
-          }}
-        >
-          <option value="">Season</option>
-          {Array.from({ length: 18 }, (_, i) => i + 1).map((w) => (
-            <option key={w} value={String(w)}>
-              Week {w}
-            </option>
-          ))}
-        </select>
-      </label>
+    <div className="mx-auto flex w-full max-w-2xl flex-col">
+      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold tracking-[0.2em] text-emerald-400 uppercase">
+            Standings
+          </p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-white sm:text-4xl">
+            Leaderboard
+          </h1>
+          <p className="mt-1 text-sm text-gray-400">
+            One point per correct pick.
+          </p>
+        </div>
+        <label className="flex items-center gap-2 text-sm text-gray-300">
+          Scope
+          <select
+            className="rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-white"
+            value={week}
+            onChange={(e) => {
+              setWeek(e.target.value);
+              void load(e.target.value);
+            }}
+          >
+            <option value="">Season</option>
+            {Array.from({ length: 18 }, (_, i) => i + 1).map((w) => (
+              <option key={w} value={String(w)}>
+                Week {w}
+              </option>
+            ))}
+          </select>
+        </label>
+      </header>
 
       {error && <p className="mb-4 text-sm text-red-400">{error}</p>}
 
@@ -98,17 +102,17 @@ export function LeaderboardTable() {
       ) : (
         <div className="w-full">
           {top.length >= 3 && (
-            <div className="mb-8 grid grid-cols-3 gap-2 sm:gap-4">
+            <div className="mb-8 hidden grid-cols-3 gap-4 sm:grid">
               <PodiumCard place={2} row={top[1]} />
               <PodiumCard place={1} row={top[0]} />
               <PodiumCard place={3} row={top[2]} />
             </div>
           )}
 
-          <div className="overflow-hidden rounded-xl border border-gray-700 bg-gray-800 shadow-lg">
-            <div className="bg-gray-700 px-4 py-4 sm:px-6">
-              <h2 className="text-lg font-bold text-white sm:text-xl">
-                Full Rankings
+          <div className="overflow-hidden rounded-2xl border border-gray-700/80 bg-gray-800/90 shadow-lg">
+            <div className="bg-gray-800 px-4 py-4 sm:px-6">
+              <h2 className="text-sm font-semibold tracking-wider text-gray-400 uppercase">
+                Full rankings
               </h2>
             </div>
             <div className="hidden grid-cols-12 gap-4 px-6 py-4 text-sm font-semibold tracking-wider text-gray-300 uppercase sm:grid">

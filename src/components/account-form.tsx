@@ -78,10 +78,13 @@ export function AccountForm() {
   }
 
   return (
-    <div className="max-w-xl">
-      <h1 className="mb-4 text-2xl font-bold">Account</h1>
+    <div className="mx-auto max-w-xl">
+      <p className="text-xs font-semibold tracking-[0.2em] text-emerald-400 uppercase">
+        You
+      </p>
+      <h1 className="mt-1 mb-6 text-2xl font-bold tracking-tight sm:text-3xl">Account</h1>
 
-      <form onSubmit={onSaveProfile} className="mb-10 flex flex-col gap-4">
+      <form onSubmit={onSaveProfile} className="mb-8 flex flex-col gap-4 rounded-2xl border border-gray-700/80 bg-gray-800/90 p-5">
         <h2 className="text-lg font-semibold">Profile</h2>
         <label className="flex flex-col gap-1 text-sm">
           Display name
@@ -125,13 +128,13 @@ export function AccountForm() {
         <button
           type="submit"
           disabled={profileLoading}
-          className="rounded-xl bg-gradient-to-r from-green-600 to-green-700 px-4 py-3 font-semibold text-white hover:from-green-700 hover:to-green-800 disabled:opacity-60"
+          className="rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
         >
           {profileLoading ? "Saving…" : "Save profile"}
         </button>
       </form>
 
-      <form onSubmit={onSubmitPassword} className="flex max-w-sm flex-col gap-3">
+      <form onSubmit={onSubmitPassword} className="flex max-w-sm flex-col gap-3 rounded-2xl border border-gray-700/80 bg-gray-800/90 p-5">
         <h2 className="text-lg font-semibold">Password</h2>
         <label className="flex flex-col gap-1 text-sm">
           Current password
@@ -158,11 +161,23 @@ export function AccountForm() {
         {message && <p className="text-sm text-green-400">{message}</p>}
         <button
           type="submit"
-          className="rounded-xl bg-gradient-to-r from-green-600 to-green-700 px-4 py-3 font-semibold text-white hover:from-green-700 hover:to-green-800"
+          className="rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white hover:bg-emerald-500"
         >
           Change password
         </button>
       </form>
+
+      <button
+        type="button"
+        className="mt-6 w-full rounded-xl border border-gray-700 py-3 text-sm text-gray-300 hover:bg-gray-800 md:hidden"
+        onClick={async () => {
+          await fetch("/api/auth/logout", { method: "POST" });
+          router.push("/");
+          router.refresh();
+        }}
+      >
+        Log out
+      </button>
     </div>
   );
 }

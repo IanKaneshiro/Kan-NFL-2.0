@@ -20,6 +20,6 @@ export default async function AppLayout({
   if (!rows[0]) redirect("/login");
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">{children}</main>
+    <main className="mx-auto w-full max-w-4xl px-3 py-4 sm:px-6 sm:py-6">{children}</main>
   );
 }

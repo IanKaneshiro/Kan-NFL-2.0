@@ -160,7 +160,7 @@ export function AdminPanel() {
         </p>
       )}
 
-      <section className="rounded-xl border border-gray-700 bg-gray-800 p-4">
+      <section className="rounded-2xl border border-gray-700/80 bg-gray-800/90 p-5">
         <h2 className="mb-3 font-semibold">Players</h2>
         <ul className="mb-4 divide-y divide-gray-700 text-sm">
           {users.map((u) => (
@@ -210,7 +210,7 @@ export function AdminPanel() {
         </form>
       </section>
 
-      <section className="rounded-xl border border-gray-700 bg-gray-800 p-4">
+      <section className="rounded-2xl border border-gray-700/80 bg-gray-800/90 p-5">
         <h2 className="mb-3 font-semibold">NFL sync (ESPN free API)</h2>
         <div className="flex flex-wrap items-center gap-2">
           <select
@@ -233,7 +233,7 @@ export function AdminPanel() {
           </button>
           <button
             type="button"
-            className="rounded-md bg-blue-600 px-3 py-1.5 text-sm hover:bg-blue-500"
+            className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm hover:bg-emerald-500"
             onClick={() => runSync(true)}
           >
             Sync weeks 1–18
@@ -241,7 +241,7 @@ export function AdminPanel() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-gray-700 bg-gray-800 p-4">
+      <section className="rounded-2xl border border-gray-700/80 bg-gray-800/90 p-5">
         <h2 className="mb-3 font-semibold">Override winner</h2>
         <p className="mb-3 text-xs text-gray-400">
           Uses the week selector above. Home / Away set the winner; Clear

@@ -35,7 +35,9 @@ export async function SiteChrome({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div
+      className={`min-h-dvh bg-gray-950 ${isLoggedIn ? "pb-[calc(4.75rem+env(safe-area-inset-bottom))] md:pb-0" : ""}`}
+    >
       <Nav
         displayName={displayName}
         avatarId={avatarId}
