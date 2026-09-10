@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS games (
   away_name TEXT,
   status TEXT NOT NULL,
   winner_team TEXT,
+  home_score INTEGER,
+  away_score INTEGER,
   winner_override INTEGER NOT NULL DEFAULT 0,
   created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
   updated_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
@@ -85,6 +87,8 @@ CREATE TABLE IF NOT EXISTS games (
   away_name TEXT,
   status TEXT NOT NULL,
   winner_team TEXT,
+  home_score INTEGER,
+  away_score INTEGER,
   winner_override BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -152,6 +156,18 @@ async function createDisplayNameUniqueIndexPostgres(
   }
 }
 
+async function addSqliteColumn(
+  client: ReturnType<typeof createClient>,
+  ddl: string,
+): Promise<void> {
+  try {
+    await client.execute(ddl);
+  } catch (e) {
+    const msg = String(e);
+    if (!/duplicate column/i.test(msg)) throw e;
+  }
+}
+
 async function main() {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL is not set");
@@ -164,14 +180,12 @@ async function main() {
     for (const stmt of SQLITE_DDL.split(";").map((s) => s.trim()).filter(Boolean)) {
       await client.execute(stmt);
     }
-    try {
-      await client.execute(
-        "ALTER TABLE users ADD COLUMN avatar_id TEXT NOT NULL DEFAULT 'fun-football'",
-      );
-    } catch (e) {
-      const msg = String(e);
-      if (!/duplicate column/i.test(msg)) throw e;
-    }
+    await addSqliteColumn(
+      client,
+      "ALTER TABLE users ADD COLUMN avatar_id TEXT NOT NULL DEFAULT 'fun-football'",
+    );
+    await addSqliteColumn(client, "ALTER TABLE games ADD COLUMN home_score INTEGER");
+    await addSqliteColumn(client, "ALTER TABLE games ADD COLUMN away_score INTEGER");
     await createDisplayNameUniqueIndexSqlite(client);
     console.log(`Applied SQLite schema to ${abs}`);
     return;
@@ -181,6 +195,12 @@ async function main() {
   await sql.unsafe(PG_DDL);
   await sql.unsafe(
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_id TEXT NOT NULL DEFAULT 'fun-football'",
+  );
+  await sql.unsafe(
+    "ALTER TABLE games ADD COLUMN IF NOT EXISTS home_score INTEGER",
+  );
+  await sql.unsafe(
+    "ALTER TABLE games ADD COLUMN IF NOT EXISTS away_score INTEGER",
   );
   await createDisplayNameUniqueIndexPostgres(sql);
   await sql.end();

@@ -106,6 +106,8 @@ export type WeekPicksView = {
     awayName: string | null;
     status: GameStatus;
     winnerTeam: string | null;
+    homeScore: number | null;
+    awayScore: number | null;
     locked: boolean;
   }>;
   myPicks: Record<string, string>;
@@ -214,6 +216,8 @@ export function getWeekPicksView(input: {
         awayName: g.awayName,
         status: g.status as GameStatus,
         winnerTeam: g.winnerTeam,
+        homeScore: g.homeScore ?? null,
+        awayScore: g.awayScore ?? null,
         locked,
       });
 

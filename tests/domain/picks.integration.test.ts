@@ -1,10 +1,11 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { execSync } from "node:child_process";
 import { unlinkSync } from "node:fs";
+import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { getDb, resetDbCache, schemaTables } from "@/db";
 import { newId } from "@/domain/ids";
-import { savePicks } from "@/domain/picks";
+import { getWeekPicksView, savePicks } from "@/domain/picks";
 
 const DB = "file:./data/test-picks.db";
 
@@ -106,5 +107,43 @@ describe("savePicks", () => {
     );
     expect(result.saved).toBe(1);
     expect(result.lockedGameIds).toEqual([lockedGameId]);
+  });
+
+  it("includes home and away scores on the week picks view", async () => {
+    process.env.SEASON_YEAR = "2026";
+    process.env.NFL_SYNC_MIN_INTERVAL_SEC = "999999";
+    const db = getDb();
+    const t = schemaTables();
+    const now = new Date();
+    await db
+      .update(t.games)
+      .set({ homeScore: 24, awayScore: 17 })
+      .where(eq(t.games.id, lockedGameId));
+    await db.insert(t.syncRuns).values({
+      id: newId(),
+      startedAt: now,
+      finishedAt: now,
+      ok: true,
+      message: "throttled in test",
+    });
+
+    const view = await Effect.runPromise(
+      getWeekPicksView({
+        userId,
+        week: 1,
+        now: new Date("2026-01-01T00:00:00Z"),
+      }),
+    );
+    expect(view.games.find((g) => g.id === lockedGameId)).toMatchObject({
+      homeTeam: "PHI",
+      awayTeam: "DAL",
+      status: "final",
+      homeScore: 24,
+      awayScore: 17,
+    });
+    expect(view.games.find((g) => g.id === openGameId)).toMatchObject({
+      homeScore: null,
+      awayScore: null,
+    });
   });
 });

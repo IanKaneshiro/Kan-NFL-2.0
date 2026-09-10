@@ -3,12 +3,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AvatarMark } from "@/components/avatar-mark";
 import { TeamLogo } from "@/components/team-logo";
+import { visibleTeamScore } from "@/lib/game-score";
 
 type TrendGame = {
   gameId: string;
   homeTeam: string;
   awayTeam: string;
   kickoffAt: string;
+  status: string;
+  homeScore: number | null;
+  awayScore: number | null;
   homeCount: number;
   awayCount: number;
   homePct: number;
@@ -46,6 +50,16 @@ function consensusClass(label: TrendGame["consensus"]): string {
     default:
       return "bg-gray-700/80 text-gray-300 ring-1 ring-gray-600";
   }
+}
+
+function formatMatchupLine(game: TrendGame): string {
+  const awayScore = visibleTeamScore(game.status, game.awayScore);
+  const homeScore = visibleTeamScore(game.status, game.homeScore);
+  const away =
+    awayScore != null ? `${game.awayTeam} ${awayScore}` : game.awayTeam;
+  const home =
+    homeScore != null ? `${game.homeTeam} ${homeScore}` : game.homeTeam;
+  return `${away} @ ${home}`;
 }
 
 function formatKickoff(iso: string): string {
@@ -219,6 +233,8 @@ export function TrendsBoard() {
 
           {games.map((g) => {
             const total = g.homeCount + g.awayCount;
+            const awayScore = visibleTeamScore(g.status, g.awayScore);
+            const homeScore = visibleTeamScore(g.status, g.homeScore);
             return (
               <article
                 key={g.gameId}
@@ -244,6 +260,9 @@ export function TrendsBoard() {
                     <TeamLogo abbr={g.awayTeam} size="lg" />
                     <span className="text-sm font-bold text-white">
                       {g.awayTeam}
+                      {awayScore != null ? (
+                        <span className="text-emerald-300"> {awayScore}</span>
+                      ) : null}
                     </span>
                     <span className="text-xs text-gray-400">Away</span>
                   </button>
@@ -258,6 +277,9 @@ export function TrendsBoard() {
                     <TeamLogo abbr={g.homeTeam} size="lg" />
                     <span className="text-sm font-bold text-white">
                       {g.homeTeam}
+                      {homeScore != null ? (
+                        <span className="text-emerald-300"> {homeScore}</span>
+                      ) : null}
                     </span>
                     <span className="text-xs text-gray-400">Home</span>
                   </button>
@@ -323,7 +345,7 @@ export function TrendsBoard() {
                   {modal.pickedTeam}
                 </h3>
                 <p className="text-sm text-gray-400">
-                  {modal.game.awayTeam} @ {modal.game.homeTeam}
+                  {formatMatchupLine(modal.game)}
                 </p>
               </div>
             </div>

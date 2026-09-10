@@ -48,6 +48,8 @@ export const games = sqliteTable(
       .notNull()
       .$type<"scheduled" | "in_progress" | "final">(),
     winnerTeam: text("winner_team"),
+    homeScore: integer("home_score"),
+    awayScore: integer("away_score"),
     winnerOverride: integer("winner_override", { mode: "boolean" })
       .notNull()
       .default(false),

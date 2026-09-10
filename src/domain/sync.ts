@@ -37,6 +37,8 @@ export async function upsertNormalizedGames(
         awayName: g.awayName ?? null,
         status: g.status,
         winnerTeam: g.winnerTeam,
+        homeScore: g.homeScore,
+        awayScore: g.awayScore,
         winnerOverride: false,
         createdAt: now,
         updatedAt: now,
@@ -57,6 +59,10 @@ export async function upsertNormalizedGames(
         awayName: g.awayName ?? null,
         status: winnerOverride ? row.status : g.status,
         winnerTeam: winnerOverride ? row.winnerTeam : g.winnerTeam,
+        // Scores stay ESPN-sourced even under winnerOverride. Override only
+        // preserves commissioner winner/status for pick scoring.
+        homeScore: g.homeScore,
+        awayScore: g.awayScore,
         updatedAt: now,
       })
       .where(eq(t.games.id, row.id));

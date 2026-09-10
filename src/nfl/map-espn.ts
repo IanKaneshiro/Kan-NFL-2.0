@@ -41,6 +41,14 @@ function mapStatus(
   return "scheduled";
 }
 
+function parseCompetitorScore(raw: string | undefined): number | null {
+  if (raw == null) return null;
+  const trimmed = raw.trim();
+  if (trimmed === "") return null;
+  const n = Number(trimmed);
+  return Number.isFinite(n) ? n : null;
+}
+
 export function mapEspnScoreboard(
   json: unknown,
   seasonYear: number,
@@ -63,16 +71,20 @@ export function mapEspnScoreboard(
       comp.status?.type?.completed,
     );
 
+    const homeScore = parseCompetitorScore(home.score);
+    const awayScore = parseCompetitorScore(away.score);
+
     let winnerTeam: string | null = null;
     if (status === "final") {
       if (home.winner) winnerTeam = home.team.abbreviation;
       else if (away.winner) winnerTeam = away.team.abbreviation;
-      else {
-        const hs = Number(home.score);
-        const as = Number(away.score);
-        if (Number.isFinite(hs) && Number.isFinite(as) && hs !== as) {
-          winnerTeam = hs > as ? home.team.abbreviation : away.team.abbreviation;
-        }
+      else if (
+        homeScore != null &&
+        awayScore != null &&
+        homeScore !== awayScore
+      ) {
+        winnerTeam =
+          homeScore > awayScore ? home.team.abbreviation : away.team.abbreviation;
       }
     }
 
@@ -87,6 +99,8 @@ export function mapEspnScoreboard(
       awayName: away.team.displayName ?? away.team.name,
       status,
       winnerTeam,
+      homeScore,
+      awayScore,
     });
   }
 
