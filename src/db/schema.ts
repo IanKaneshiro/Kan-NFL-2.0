@@ -49,6 +49,8 @@ export const games = pgTable(
       .notNull()
       .$type<"scheduled" | "in_progress" | "final">(),
     winnerTeam: text("winner_team"),
+    homeScore: integer("home_score"),
+    awayScore: integer("away_score"),
     winnerOverride: boolean("winner_override").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

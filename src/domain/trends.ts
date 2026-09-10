@@ -4,6 +4,7 @@ import { getDb, schemaTables } from "@/db";
 import { resolveAvatarId } from "@/domain/avatars";
 import { NotFound, ValidationError } from "@/domain/errors";
 import { getSeasonYear } from "@/domain/season";
+import type { GameStatus } from "@/domain/scoring";
 
 export function consensusLabel(
   leadingShare: number,
@@ -19,6 +20,9 @@ export type TrendGame = {
   homeTeam: string;
   awayTeam: string;
   kickoffAt: string;
+  status: GameStatus;
+  homeScore: number | null;
+  awayScore: number | null;
   homeCount: number;
   awayCount: number;
   homePct: number;
@@ -42,6 +46,9 @@ export function buildTrendGames(
     homeTeam: string;
     awayTeam: string;
     kickoffAt: Date;
+    status: GameStatus;
+    homeScore: number | null;
+    awayScore: number | null;
   }[],
   picks: { gameId: string; pickedTeam: string; userId: string }[],
 ): { games: TrendGame[]; popular: { team: string; count: number }[] } {
@@ -64,6 +71,9 @@ export function buildTrendGames(
       homeTeam: g.homeTeam,
       awayTeam: g.awayTeam,
       kickoffAt: kickoff.toISOString(),
+      status: g.status,
+      homeScore: g.homeScore,
+      awayScore: g.awayScore,
       homeCount,
       awayCount,
       homePct,
@@ -104,6 +114,9 @@ export function getWeekTrends(week: number) {
         homeTeam: g.homeTeam,
         awayTeam: g.awayTeam,
         kickoffAt: asDate(g.kickoffAt),
+        status: g.status as GameStatus,
+        homeScore: g.homeScore ?? null,
+        awayScore: g.awayScore ?? null,
       })),
       picks.map((p) => ({
         gameId: p.gameId,

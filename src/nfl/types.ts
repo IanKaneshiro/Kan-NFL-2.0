@@ -9,4 +9,6 @@ export type NormalizedGame = {
   awayName?: string;
   status: "scheduled" | "in_progress" | "final";
   winnerTeam: string | null;
+  homeScore: number | null;
+  awayScore: number | null;
 };

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { TeamLogo } from "@/components/team-logo";
+import { visibleTeamScore } from "@/lib/game-score";
 
 type Game = {
   id: string;
@@ -12,6 +13,8 @@ type Game = {
   awayName: string | null;
   status: string;
   winnerTeam: string | null;
+  homeScore: number | null;
+  awayScore: number | null;
   locked: boolean;
 };
 
@@ -185,6 +188,8 @@ export function PicksBoard({ initialWeek }: { initialWeek?: number }) {
             const revealed = view.revealedPicks.filter((r) => r.gameId === g.id);
             const awayLabel = g.awayName ?? g.awayTeam;
             const homeLabel = g.homeName ?? g.homeTeam;
+            const awayScore = visibleTeamScore(g.status, g.awayScore);
+            const homeScore = visibleTeamScore(g.status, g.homeScore);
             return (
               <div
                 key={g.id}
@@ -196,7 +201,14 @@ export function PicksBoard({ initialWeek }: { initialWeek?: number }) {
               >
                 <div className="mb-3 flex items-baseline justify-between gap-2">
                   <h2 className="text-sm font-bold text-white sm:text-lg">
-                    {g.awayTeam} <span className="text-gray-500">@</span> {g.homeTeam}
+                    {g.awayTeam}
+                    {awayScore != null ? (
+                      <span className="text-emerald-300"> {awayScore}</span>
+                    ) : null}{" "}
+                    <span className="text-gray-500">@</span> {g.homeTeam}
+                    {homeScore != null ? (
+                      <span className="text-emerald-300"> {homeScore}</span>
+                    ) : null}
                   </h2>
                   <span className="shrink-0 text-[11px] text-gray-400">
                     {new Date(g.kickoffAt).toLocaleString(undefined, {
@@ -210,8 +222,18 @@ export function PicksBoard({ initialWeek }: { initialWeek?: number }) {
                 <div className="grid grid-cols-2 gap-2">
                   {(
                     [
-                      { team: g.awayTeam, label: awayLabel, side: "Away" },
-                      { team: g.homeTeam, label: homeLabel, side: "Home" },
+                      {
+                        team: g.awayTeam,
+                        label: awayLabel,
+                        side: "Away",
+                        score: awayScore,
+                      },
+                      {
+                        team: g.homeTeam,
+                        label: homeLabel,
+                        side: "Home",
+                        score: homeScore,
+                      },
                     ] as const
                   ).map((opt) => {
                     const selected = picks[g.id] === opt.team;
@@ -235,6 +257,9 @@ export function PicksBoard({ initialWeek }: { initialWeek?: number }) {
                         <div className="min-w-0">
                           <span className="block text-sm font-semibold text-white sm:text-lg">
                             {opt.team}
+                            {opt.score != null ? (
+                              <span className="text-emerald-300"> {opt.score}</span>
+                            ) : null}
                           </span>
                           <div className="hidden text-xs text-gray-300 sm:block">
                             {opt.label}

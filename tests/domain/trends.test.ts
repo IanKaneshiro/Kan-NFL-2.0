@@ -22,8 +22,24 @@ describe("consensusLabel", () => {
 describe("buildTrendGames", () => {
   it("includes games before kickoff", () => {
     const games = [
-      { id: "1", homeTeam: "KC", awayTeam: "BUF", kickoffAt: new Date("2026-09-10T17:00:00Z") },
-      { id: "2", homeTeam: "DAL", awayTeam: "NYG", kickoffAt: new Date("2026-09-10T20:00:00Z") },
+      {
+        id: "1",
+        homeTeam: "KC",
+        awayTeam: "BUF",
+        kickoffAt: new Date("2026-09-10T17:00:00Z"),
+        status: "scheduled" as const,
+        homeScore: 0,
+        awayScore: 0,
+      },
+      {
+        id: "2",
+        homeTeam: "DAL",
+        awayTeam: "NYG",
+        kickoffAt: new Date("2026-09-10T20:00:00Z"),
+        status: "scheduled" as const,
+        homeScore: null,
+        awayScore: null,
+      },
     ];
     const picks = [
       { gameId: "1", pickedTeam: "KC", userId: "a" },
@@ -37,8 +53,51 @@ describe("buildTrendGames", () => {
     expect(rows[0].homeCount).toBe(2);
     expect(rows[0].awayCount).toBe(1);
     expect(rows[0].homePct).toBe(67);
+    expect(rows[0].status).toBe("scheduled");
+    expect(rows[0].homeScore).toBe(0);
+    expect(rows[0].awayScore).toBe(0);
     expect(rows[1].gameId).toBe("2");
     expect(rows[1].homeCount).toBe(1);
     expect(popular[0]).toEqual({ team: "KC", count: 2 });
+  });
+
+  it("passes through final and live scores with team sides", () => {
+    const { games: rows } = buildTrendGames(
+      [
+        {
+          id: "final-1",
+          homeTeam: "KC",
+          awayTeam: "DEN",
+          kickoffAt: new Date("2026-09-10T17:00:00Z"),
+          status: "final",
+          homeScore: 17,
+          awayScore: 24,
+        },
+        {
+          id: "live-1",
+          homeTeam: "PHI",
+          awayTeam: "DAL",
+          kickoffAt: new Date("2026-09-10T20:00:00Z"),
+          status: "in_progress",
+          homeScore: 14,
+          awayScore: 10,
+        },
+      ],
+      [],
+    );
+    expect(rows[0]).toMatchObject({
+      gameId: "final-1",
+      homeTeam: "KC",
+      awayTeam: "DEN",
+      status: "final",
+      homeScore: 17,
+      awayScore: 24,
+    });
+    expect(rows[1]).toMatchObject({
+      gameId: "live-1",
+      status: "in_progress",
+      homeScore: 14,
+      awayScore: 10,
+    });
   });
 });
