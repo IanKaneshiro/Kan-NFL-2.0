@@ -45,11 +45,11 @@ export function PicksBoard({ initialWeek }: { initialWeek?: number }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const load = useCallback(async (w: number) => {
+  const load = useCallback(async (w?: number) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/picks?week=${w}`);
+      const res = await fetch(w ? `/api/picks?week=${w}` : "/api/picks");
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "Failed to load picks");
@@ -66,7 +66,8 @@ export function PicksBoard({ initialWeek }: { initialWeek?: number }) {
   }, []);
 
   useEffect(() => {
-    void load(week);
+    // No week param lets the server pick the current week.
+    void load(initialWeek);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
