@@ -22,6 +22,15 @@ export type BreakdownGame = {
   result: BreakdownResult;
 };
 
+export type BreakdownWeek = {
+  week: number;
+  points: number;
+  correct: number;
+  wrong: number;
+  missed: number;
+  live: number;
+};
+
 export type PlayerBreakdown = {
   user: { userId: string; displayName: string; avatarId: string };
   week: number | null;
@@ -30,6 +39,7 @@ export type PlayerBreakdown = {
   wrong: number;
   missed: number;
   burnedBy: { team: string; count: number }[];
+  weeks: BreakdownWeek[];
   games: BreakdownGame[];
 };
 
@@ -64,6 +74,7 @@ export function buildPlayerBreakdown(
   let correct = 0;
   let wrong = 0;
   let missed = 0;
+  const weeks = new Map<number, BreakdownWeek>();
 
   for (const g of games) {
     if (g.status === "scheduled") continue;
@@ -75,13 +86,32 @@ export function buildPlayerBreakdown(
     } else if (!pickedTeam) {
       result = "missed";
       missed += 1;
-    } else if (scorePick({ pickedTeam, winnerTeam: g.winnerTeam, status: g.status }) === 1) {
+    } else if (
+      scorePick({ pickedTeam, winnerTeam: g.winnerTeam, status: g.status }) ===
+      1
+    ) {
       result = "correct";
       correct += 1;
     } else {
       result = "wrong";
       wrong += 1;
       burned.set(pickedTeam, (burned.get(pickedTeam) ?? 0) + 1);
+    }
+
+    const w = weeks.get(g.week) ?? {
+      week: g.week,
+      points: 0,
+      correct: 0,
+      wrong: 0,
+      missed: 0,
+      live: 0,
+    };
+    weeks.set(g.week, w);
+    if (result === "correct") {
+      w.correct += 1;
+      w.points += 1;
+    } else {
+      w[result] += 1;
     }
 
     rows.push({
@@ -109,7 +139,15 @@ export function buildPlayerBreakdown(
     .map(([team, count]) => ({ team, count }))
     .sort((a, b) => b.count - a.count || a.team.localeCompare(b.team));
 
-  return { points: correct, correct, wrong, missed, burnedBy, games: rows };
+  return {
+    points: correct,
+    correct,
+    wrong,
+    missed,
+    burnedBy,
+    weeks: [...weeks.values()].sort((a, b) => a.week - b.week),
+    games: rows,
+  };
 }
 
 export function getPlayerBreakdown(userId: string, week?: number) {
@@ -118,7 +156,10 @@ export function getPlayerBreakdown(userId: string, week?: number) {
       const db = getDb();
       const t = schemaTables();
 
-      const found = await db.select().from(t.users).where(eq(t.users.id, userId));
+      const found = await db
+        .select()
+        .from(t.users)
+        .where(eq(t.users.id, userId));
       const user = found[0];
       if (!user) throw new NotFound({ entity: "user" });
 
@@ -127,9 +168,14 @@ export function getPlayerBreakdown(userId: string, week?: number) {
         .from(t.games)
         .where(eq(t.games.seasonYear, getSeasonYear()));
       const games =
-        week === undefined ? seasonGames : seasonGames.filter((g) => g.week === week);
+        week === undefined
+          ? seasonGames
+          : seasonGames.filter((g) => g.week === week);
 
-      const picks = await db.select().from(t.picks).where(eq(t.picks.userId, userId));
+      const picks = await db
+        .select()
+        .from(t.picks)
+        .where(eq(t.picks.userId, userId));
       const picksByGameId = new Map(picks.map((p) => [p.gameId, p.pickedTeam]));
 
       const built = buildPlayerBreakdown(

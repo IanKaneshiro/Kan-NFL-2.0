@@ -36,6 +36,9 @@ describe("buildPlayerBreakdown", () => {
     );
     expect(result).toMatchObject({ points: 1, correct: 1, wrong: 2, missed: 1 });
     expect(result.burnedBy).toEqual([{ team: "DAL", count: 2 }]);
+    expect(result.weeks).toEqual([
+      { week: 1, points: 1, correct: 1, wrong: 2, missed: 1, live: 0 },
+    ]);
     expect(result.games.map((g) => g.result)).toEqual([
       "wrong",
       "wrong",
@@ -56,6 +59,9 @@ describe("buildPlayerBreakdown", () => {
       ]),
     );
     expect(result.points).toBe(0);
+    expect(result.weeks).toEqual([
+      { week: 1, points: 0, correct: 0, wrong: 0, missed: 0, live: 1 },
+    ]);
     expect(result.games).toHaveLength(1);
     expect(result.games[0]).toMatchObject({
       gameId: "live",
@@ -71,5 +77,22 @@ describe("buildPlayerBreakdown", () => {
     );
     expect(result.points).toBe(0);
     expect(result.burnedBy).toEqual([{ team: "BUF", count: 1 }]);
+  });
+
+  it("splits season totals by week", () => {
+    const result = buildPlayerBreakdown(
+      [
+        game("w2", { week: 2 }),
+        game("w1", { week: 1, winnerTeam: "BUF" }),
+      ],
+      new Map([
+        ["w1", "KC"],
+        ["w2", "KC"],
+      ]),
+    );
+    expect(result.weeks.map((w) => [w.week, w.points, w.wrong])).toEqual([
+      [1, 0, 1],
+      [2, 1, 0],
+    ]);
   });
 });
