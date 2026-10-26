@@ -100,4 +100,34 @@ describe("buildTrendGames", () => {
       awayScore: 10,
     });
   });
+
+  it("reveals pickers only once the game has kicked off", () => {
+    const { games: rows } = buildTrendGames(
+      [
+        {
+          id: "early",
+          homeTeam: "KC",
+          awayTeam: "BUF",
+          kickoffAt: new Date("2026-09-10T17:00:00Z"),
+          status: "in_progress",
+          homeScore: 7,
+          awayScore: 0,
+        },
+        {
+          id: "late",
+          homeTeam: "DAL",
+          awayTeam: "NYG",
+          kickoffAt: new Date("2026-09-10T20:00:00Z"),
+          status: "scheduled",
+          homeScore: null,
+          awayScore: null,
+        },
+      ],
+      [{ gameId: "late", pickedTeam: "DAL", userId: "a" }],
+      new Date("2026-09-10T18:00:00Z"),
+    );
+    expect(rows[0].picksRevealed).toBe(true);
+    expect(rows[1].picksRevealed).toBe(false);
+    expect(rows[1].homePct).toBe(100);
+  });
 });

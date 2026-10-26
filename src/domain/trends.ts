@@ -2,7 +2,8 @@ import { Effect } from "effect";
 import { and, eq } from "drizzle-orm";
 import { getDb, schemaTables } from "@/db";
 import { resolveAvatarId } from "@/domain/avatars";
-import { NotFound, ValidationError } from "@/domain/errors";
+import { Forbidden, NotFound, ValidationError } from "@/domain/errors";
+import { canRevealPicks } from "@/domain/reveal";
 import { getSeasonYear } from "@/domain/season";
 import type { GameStatus } from "@/domain/scoring";
 
@@ -28,6 +29,7 @@ export type TrendGame = {
   homePct: number;
   awayPct: number;
   consensus: ReturnType<typeof consensusLabel>;
+  picksRevealed: boolean;
 };
 
 export type TrendsPayload = {
@@ -51,6 +53,7 @@ export function buildTrendGames(
     awayScore: number | null;
   }[],
   picks: { gameId: string; pickedTeam: string; userId: string }[],
+  now: Date = new Date(),
 ): { games: TrendGame[]; popular: { team: string; count: number }[] } {
   const rows: TrendGame[] = [];
   const sides: { team: string; count: number }[] = [];
@@ -79,6 +82,7 @@ export function buildTrendGames(
       homePct,
       awayPct,
       consensus: consensusLabel(leadingShare),
+      picksRevealed: canRevealPicks(kickoff, now),
     });
     sides.push({ team: g.homeTeam, count: homeCount });
     sides.push({ team: g.awayTeam, count: awayCount });
@@ -144,6 +148,9 @@ export function getTeamPickers(gameId: string, pickedTeam: string) {
         .where(eq(t.games.id, gameId));
       const game = found[0];
       if (!game) throw new NotFound({ entity: "game" });
+      if (!canRevealPicks(asDate(game.kickoffAt), new Date())) {
+        throw new Forbidden({});
+      }
 
       const pickRows = await db
         .select()
@@ -169,7 +176,7 @@ export function getTeamPickers(gameId: string, pickedTeam: string) {
       return { pickers };
     },
     catch: (e) =>
-      e instanceof NotFound || e instanceof ValidationError
+      e instanceof NotFound || e instanceof Forbidden || e instanceof ValidationError
         ? e
         : new ValidationError({ message: String(e) }),
   });

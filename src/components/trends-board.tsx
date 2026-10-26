@@ -18,6 +18,7 @@ type TrendGame = {
   homePct: number;
   awayPct: number;
   consensus: "High" | "Moderate" | "Slight" | "Split";
+  picksRevealed: boolean;
 };
 
 type TrendsPayload = {
@@ -37,6 +38,7 @@ type ModalState = {
   pickedTeam: string;
   pickers: Picker[] | null;
   error: string | null;
+  hidden: boolean;
 };
 
 function consensusClass(label: TrendGame["consensus"]): string {
@@ -123,7 +125,11 @@ export function TrendsBoard() {
 
   async function openSide(game: TrendGame, pickedTeam: string) {
     const fetchId = ++pickerFetchId.current;
-    setModal({ game, pickedTeam, pickers: null, error: null });
+    if (!game.picksRevealed) {
+      setModal({ game, pickedTeam, pickers: [], error: null, hidden: true });
+      return;
+    }
+    setModal({ game, pickedTeam, pickers: null, error: null, hidden: false });
     try {
       const res = await fetch(
         `/api/team-pickers?gameId=${encodeURIComponent(game.gameId)}&pickedTeam=${encodeURIComponent(pickedTeam)}`,
@@ -174,7 +180,8 @@ export function TrendsBoard() {
             Trends
           </h1>
           <p className="mt-1 text-sm text-gray-400">
-            Live consensus. Tap a side to see who&apos;s on it.
+            Live consensus. Tap a side to see who&apos;s on it once the game
+            kicks off.
           </p>
         </div>
         <label className="flex items-center gap-2 text-sm text-gray-300">
@@ -349,10 +356,26 @@ export function TrendsBoard() {
                 </p>
               </div>
             </div>
-            {modal.error && (
+            {modal.hidden ? (
+              <div className="mt-4 flex items-start gap-3 rounded-xl bg-amber-500/10 px-3 py-3 ring-1 ring-amber-500/30">
+                <span aria-hidden="true" className="text-lg leading-none">
+                  🔒
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-amber-200">
+                    Picks are hidden until kickoff
+                  </p>
+                  <p className="mt-0.5 text-xs text-amber-100/70">
+                    You can&apos;t see who picked {modal.pickedTeam} until the
+                    game starts ({formatKickoff(modal.game.kickoffAt)}).
+                  </p>
+                </div>
+              </div>
+            ) : null}
+            {modal.hidden ? null : modal.error && (
               <p className="mt-3 text-sm text-red-400">{modal.error}</p>
             )}
-            {modal.pickers == null && !modal.error ? (
+            {modal.hidden ? null : modal.pickers == null && !modal.error ? (
               <p className="mt-4 text-sm text-gray-400">Loading…</p>
             ) : modal.pickers && modal.pickers.length === 0 && !modal.error ? (
               <p className="mt-4 text-sm text-gray-400">
