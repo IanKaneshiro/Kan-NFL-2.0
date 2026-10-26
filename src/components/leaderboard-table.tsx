@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { AvatarMark } from "@/components/avatar-mark";
+import {
+  PlayerBreakdownSheet,
+  type BreakdownPlayer,
+} from "@/components/player-breakdown-sheet";
 
 type Row = {
   userId: string;
@@ -29,6 +33,7 @@ export function LeaderboardTable() {
   const [week, setWeek] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<BreakdownPlayer | null>(null);
 
   async function load(w: string) {
     setLoading(true);
@@ -66,7 +71,7 @@ export function LeaderboardTable() {
             Leaderboard
           </h1>
           <p className="mt-1 text-sm text-gray-400">
-            One point per correct pick.
+            One point per correct pick. Tap a player to see how they got there.
           </p>
         </div>
         <label className="flex items-center gap-2 text-sm text-gray-300">
@@ -126,9 +131,11 @@ export function LeaderboardTable() {
               {rows.map((r, index) => {
                 const pct = accuracy(r);
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={r.userId}
-                    className={
+                    onClick={() => setSelected(r)}
+                    className={`block w-full text-left hover:bg-gray-700/40 ${
                       index === 0
                         ? "border-l-4 border-yellow-400 bg-gradient-to-r from-yellow-900/30 to-yellow-800/30"
                         : index === 1
@@ -136,7 +143,7 @@ export function LeaderboardTable() {
                           : index === 2
                             ? "border-l-4 border-orange-600 bg-gradient-to-r from-orange-900/30 to-orange-800/30"
                             : ""
-                    }
+                    }`}
                   >
                     <div className="flex items-center justify-between px-4 py-4 sm:hidden">
                       <div className="flex items-center gap-3">
@@ -171,12 +178,20 @@ export function LeaderboardTable() {
                         {r.correct}-{r.finalGames - r.correct}
                       </div>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
           </div>
         </div>
+      )}
+
+      {selected && (
+        <PlayerBreakdownSheet
+          player={selected}
+          week={week}
+          onClose={() => setSelected(null)}
+        />
       )}
     </div>
   );
